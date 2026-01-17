@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Middleware to check team-specific permissions.
+ *
+ * Usage in routes:
+ *   Route::middleware('team.permission:teams.manage-members')->...
+ *   Route::middleware('team.permission:content.publish')->...
+ */
+class TeamPermissionMiddleware
+{
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next, string ...$permissions): Response
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Super admins bypass all checks
+        if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
+        $team = $user->currentTeam;
+
+        if (!$team) {
+            abort(403, 'No team context');
+        }
+
+        // Check if user has ALL required permissions
+        foreach ($permissions as $permission) {
+            if (!$user->hasTeamPermission($permission, $team)) {
+                abort(403, "Missing permission: {$permission}");
+            }
+        }
+
+        return $next($request);
+    }
+}

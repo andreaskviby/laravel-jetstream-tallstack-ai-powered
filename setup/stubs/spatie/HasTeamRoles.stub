@@ -1,0 +1,200 @@
+<?php
+
+namespace App\Traits;
+
+use App\Models\Team;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Traits\HasRoles;
+
+/**
+ * Trait for integrating Spatie Roles with Jetstream Teams.
+ *
+ * This trait extends Spatie's HasRoles to work within the context of teams,
+ * allowing users to have different roles in different teams.
+ */
+trait HasTeamRoles
+{
+    use HasRoles;
+
+    /**
+     * Get the user's role within a specific team.
+     */
+    public function teamRole(?Team $team = null): ?Role
+    {
+        $team = $team ?? $this->currentTeam;
+
+        if (!$team) {
+            return null;
+        }
+
+        $membership = $this->teamMembership($team);
+
+        if (!$membership) {
+            return null;
+        }
+
+        return Role::findByName($membership->role ?? 'team_member');
+    }
+
+    /**
+     * Check if user has a specific role within a team.
+     */
+    public function hasTeamRole(string $role, ?Team $team = null): bool
+    {
+        $team = $team ?? $this->currentTeam;
+
+        if (!$team) {
+            return false;
+        }
+
+        // Super admins have all roles
+        if ($this->hasRole('super_admin')) {
+            return true;
+        }
+
+        $teamRole = $this->teamRole($team);
+
+        return $teamRole && $teamRole->name === $role;
+    }
+
+    /**
+     * Check if user has any of the given roles within a team.
+     */
+    public function hasAnyTeamRole(array $roles, ?Team $team = null): bool
+    {
+        foreach ($roles as $role) {
+            if ($this->hasTeamRole($role, $team)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user has a permission within their current team context.
+     */
+    public function hasTeamPermission(string $permission, ?Team $team = null): bool
+    {
+        $team = $team ?? $this->currentTeam;
+
+        // Super admins bypass all permission checks
+        if ($this->hasRole('super_admin')) {
+            return true;
+        }
+
+        // Check global permissions first
+        if ($this->hasPermissionTo($permission)) {
+            return true;
+        }
+
+        // Check team-specific role permissions
+        $teamRole = $this->teamRole($team);
+
+        if (!$teamRole) {
+            return false;
+        }
+
+        return $teamRole->hasPermissionTo($permission);
+    }
+
+    /**
+     * Check if user can create teams.
+     */
+    public function canCreateTeams(): bool
+    {
+        // Super admin can always create teams
+        if ($this->hasRole('super_admin')) {
+            return true;
+        }
+
+        // Check if user has any role with team creation permission
+        foreach ($this->roles as $role) {
+            if ($role->can_create_teams ?? false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user is a super admin.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin');
+    }
+
+    /**
+     * Check if user is a team admin for the given team.
+     */
+    public function isTeamAdmin(?Team $team = null): bool
+    {
+        return $this->hasTeamRole('team_admin', $team) || $this->isSuperAdmin();
+    }
+
+    /**
+     * Assign a role to the user for a specific team.
+     */
+    public function assignTeamRole(string $role, Team $team): void
+    {
+        $membership = $this->teamMembership($team);
+
+        if ($membership) {
+            $membership->update(['role' => $role]);
+        }
+    }
+
+    /**
+     * Get the team membership record.
+     */
+    protected function teamMembership(Team $team)
+    {
+        return $team->users()
+            ->where('user_id', $this->id)
+            ->first()?->membership;
+    }
+
+    /**
+     * Get all teams where user has a specific role.
+     */
+    public function teamsWithRole(string $role): \Illuminate\Support\Collection
+    {
+        return $this->allTeams()->filter(function (Team $team) use ($role) {
+            return $this->hasTeamRole($role, $team);
+        });
+    }
+
+    /**
+     * Scope to get users with a specific team role.
+     */
+    public function scopeWithTeamRole($query, string $role, Team $team)
+    {
+        return $query->whereHas('teams', function ($q) use ($role, $team) {
+            $q->where('team_id', $team->id)
+              ->where('role', $role);
+        });
+    }
+
+    /**
+     * Get team-specific permissions for the user.
+     */
+    public function getTeamPermissions(?Team $team = null): array
+    {
+        $team = $team ?? $this->currentTeam;
+
+        if (!$team) {
+            return [];
+        }
+
+        $teamRole = $this->teamRole($team);
+
+        if (!$teamRole) {
+            return [];
+        }
+
+        return $teamRole->permissions->pluck('name')->toArray();
+    }
+}

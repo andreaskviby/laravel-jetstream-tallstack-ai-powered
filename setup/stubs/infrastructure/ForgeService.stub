@@ -1,0 +1,425 @@
+<?php
+
+namespace App\Services\Infrastructure;
+
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Laravel Forge server management service.
+ *
+ * This service provides integration with Forge's API for:
+ * - Server management
+ * - Site deployment
+ * - SSL certificate management
+ * - Database and daemon management
+ * - Deployment automation
+ */
+class ForgeService
+{
+    protected string $apiToken;
+    protected ?string $serverId;
+    protected string $baseUrl = 'https://forge.laravel.com/api/v1';
+
+    public function __construct()
+    {
+        $this->apiToken = config('services.forge.api_token');
+        $this->serverId = config('services.forge.server_id');
+    }
+
+    /**
+     * Make an authenticated request to the Forge API.
+     */
+    protected function request(string $method, string $endpoint, array $data = []): array
+    {
+        $response = Http::withToken($this->apiToken)
+            ->acceptJson()
+            ->$method("{$this->baseUrl}{$endpoint}", $data);
+
+        if (!$response->successful()) {
+            Log::error('Forge API error', [
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
+
+            throw new \Exception('Forge API request failed: ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    // ==================== Servers ====================
+
+    /**
+     * List all servers.
+     */
+    public function listServers(): array
+    {
+        return $this->request('get', '/servers');
+    }
+
+    /**
+     * Get server details.
+     */
+    public function getServer(?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}");
+    }
+
+    /**
+     * Reboot server.
+     */
+    public function rebootServer(?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/reboot");
+    }
+
+    /**
+     * Get server PHP versions.
+     */
+    public function getPhpVersions(?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/php");
+    }
+
+    // ==================== Sites ====================
+
+    /**
+     * List all sites on a server.
+     */
+    public function listSites(?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/sites");
+    }
+
+    /**
+     * Create a new site.
+     */
+    public function createSite(array $data, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+
+        $siteData = array_merge([
+            'domain' => '',
+            'project_type' => 'php',
+            'directory' => '/public',
+            'isolated' => false,
+            'php_version' => 'php83',
+        ], $data);
+
+        return $this->request('post', "/servers/{$id}/sites", $siteData);
+    }
+
+    /**
+     * Get site details.
+     */
+    public function getSite(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/sites/{$siteId}");
+    }
+
+    /**
+     * Update site configuration.
+     */
+    public function updateSite(string $siteId, array $data, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('put', "/servers/{$id}/sites/{$siteId}", $data);
+    }
+
+    /**
+     * Delete a site.
+     */
+    public function deleteSite(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('delete', "/servers/{$id}/sites/{$siteId}");
+    }
+
+    /**
+     * Get site deployment script.
+     */
+    public function getDeploymentScript(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/sites/{$siteId}/deployment/script");
+    }
+
+    /**
+     * Update site deployment script.
+     */
+    public function updateDeploymentScript(string $siteId, string $script, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('put', "/servers/{$id}/sites/{$siteId}/deployment/script", [
+            'content' => $script,
+        ]);
+    }
+
+    /**
+     * Deploy site.
+     */
+    public function deploySite(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/sites/{$siteId}/deployment/deploy");
+    }
+
+    /**
+     * Get site deployment log.
+     */
+    public function getDeploymentLog(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/sites/{$siteId}/deployment/log");
+    }
+
+    /**
+     * Enable quick deploy (auto-deploy on push).
+     */
+    public function enableQuickDeploy(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/sites/{$siteId}/deployment");
+    }
+
+    /**
+     * Disable quick deploy.
+     */
+    public function disableQuickDeploy(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('delete', "/servers/{$id}/sites/{$siteId}/deployment");
+    }
+
+    // ==================== SSL Certificates ====================
+
+    /**
+     * List SSL certificates for a site.
+     */
+    public function listCertificates(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/sites/{$siteId}/certificates");
+    }
+
+    /**
+     * Obtain a Let's Encrypt certificate.
+     */
+    public function obtainLetsEncrypt(string $siteId, array $domains, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/sites/{$siteId}/certificates/letsencrypt", [
+            'domains' => $domains,
+        ]);
+    }
+
+    /**
+     * Activate SSL certificate.
+     */
+    public function activateCertificate(string $siteId, string $certificateId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/sites/{$siteId}/certificates/{$certificateId}/activate");
+    }
+
+    // ==================== Environment Variables ====================
+
+    /**
+     * Get site environment file.
+     */
+    public function getEnvFile(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/sites/{$siteId}/env");
+    }
+
+    /**
+     * Update site environment file.
+     */
+    public function updateEnvFile(string $siteId, string $content, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('put', "/servers/{$id}/sites/{$siteId}/env", [
+            'content' => $content,
+        ]);
+    }
+
+    // ==================== Git Repository ====================
+
+    /**
+     * Install Git repository.
+     */
+    public function installGitRepository(string $siteId, array $data, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+
+        $repoData = array_merge([
+            'provider' => 'github',
+            'repository' => '',
+            'branch' => 'main',
+            'composer' => true,
+        ], $data);
+
+        return $this->request('post', "/servers/{$id}/sites/{$siteId}/git", $repoData);
+    }
+
+    /**
+     * Remove Git repository.
+     */
+    public function removeGitRepository(string $siteId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('delete', "/servers/{$id}/sites/{$siteId}/git");
+    }
+
+    // ==================== Databases ====================
+
+    /**
+     * List databases on a server.
+     */
+    public function listDatabases(?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/databases");
+    }
+
+    /**
+     * Create a database.
+     */
+    public function createDatabase(string $name, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/databases", [
+            'name' => $name,
+        ]);
+    }
+
+    /**
+     * Delete a database.
+     */
+    public function deleteDatabase(string $databaseId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('delete', "/servers/{$id}/databases/{$databaseId}");
+    }
+
+    // ==================== Database Users ====================
+
+    /**
+     * List database users on a server.
+     */
+    public function listDatabaseUsers(?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/database-users");
+    }
+
+    /**
+     * Create a database user.
+     */
+    public function createDatabaseUser(string $name, string $password, array $databases = [], ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/database-users", [
+            'name' => $name,
+            'password' => $password,
+            'databases' => $databases,
+        ]);
+    }
+
+    // ==================== Daemons ====================
+
+    /**
+     * List daemons on a server.
+     */
+    public function listDaemons(?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/daemons");
+    }
+
+    /**
+     * Create a daemon (e.g., queue worker).
+     */
+    public function createDaemon(array $data, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+
+        $daemonData = array_merge([
+            'command' => 'php artisan queue:work',
+            'user' => 'forge',
+            'directory' => '/home/forge/default',
+            'processes' => 1,
+            'startsecs' => 1,
+        ], $data);
+
+        return $this->request('post', "/servers/{$id}/daemons", $daemonData);
+    }
+
+    /**
+     * Restart a daemon.
+     */
+    public function restartDaemon(string $daemonId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/daemons/{$daemonId}/restart");
+    }
+
+    /**
+     * Delete a daemon.
+     */
+    public function deleteDaemon(string $daemonId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('delete', "/servers/{$id}/daemons/{$daemonId}");
+    }
+
+    // ==================== Scheduler ====================
+
+    /**
+     * List scheduled jobs on a server.
+     */
+    public function listScheduledJobs(?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/jobs");
+    }
+
+    /**
+     * Create a scheduled job.
+     */
+    public function createScheduledJob(array $data, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/jobs", $data);
+    }
+
+    // ==================== Commands ====================
+
+    /**
+     * Run a command on the server.
+     */
+    public function runCommand(string $siteId, string $command, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('post', "/servers/{$id}/sites/{$siteId}/commands", [
+            'command' => $command,
+        ]);
+    }
+
+    /**
+     * Get command output.
+     */
+    public function getCommandOutput(string $siteId, string $commandId, ?string $serverId = null): array
+    {
+        $id = $serverId ?? $this->serverId;
+        return $this->request('get', "/servers/{$id}/sites/{$siteId}/commands/{$commandId}");
+    }
+}

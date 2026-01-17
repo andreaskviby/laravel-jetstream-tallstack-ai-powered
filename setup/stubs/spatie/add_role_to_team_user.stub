@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * Add Spatie role column to Jetstream's team_user pivot table.
+     * This allows users to have different roles in different teams.
+     */
+    public function up(): void
+    {
+        Schema::table('team_user', function (Blueprint $table) {
+            // Add role column for Spatie integration
+            // This stores the Spatie role name for the user within this team
+            $table->string('spatie_role')->default('team_member')->after('role');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('team_user', function (Blueprint $table) {
+            $table->dropColumn('spatie_role');
+        });
+    }
+};

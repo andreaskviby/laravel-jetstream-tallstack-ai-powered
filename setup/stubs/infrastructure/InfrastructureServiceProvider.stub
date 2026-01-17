@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Providers;
+
+use App\Services\Infrastructure\CloudFlareService;
+use App\Services\Infrastructure\ForgeService;
+use App\Services\Infrastructure\MailgunService;
+use Illuminate\Support\ServiceProvider;
+
+class InfrastructureServiceProvider extends ServiceProvider
+{
+    /**
+     * Register infrastructure services.
+     */
+    public function register(): void
+    {
+        // CloudFlare
+        if (config('services.cloudflare.api_token')) {
+            $this->app->singleton(CloudFlareService::class, function ($app) {
+                return new CloudFlareService();
+            });
+        }
+
+        // Mailgun
+        if (config('services.mailgun.secret')) {
+            $this->app->singleton(MailgunService::class, function ($app) {
+                return new MailgunService();
+            });
+        }
+
+        // Laravel Forge
+        if (config('services.forge.api_token')) {
+            $this->app->singleton(ForgeService::class, function ($app) {
+                return new ForgeService();
+            });
+        }
+    }
+
+    /**
+     * Bootstrap infrastructure services.
+     */
+    public function boot(): void
+    {
+        //
+    }
+}

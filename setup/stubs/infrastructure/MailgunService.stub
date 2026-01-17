@@ -1,0 +1,271 @@
+<?php
+
+namespace App\Services\Infrastructure;
+
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Mailgun email delivery management service.
+ *
+ * This service provides integration with Mailgun's API for:
+ * - Domain verification and setup
+ * - DNS records retrieval
+ * - Email sending statistics
+ * - Bounce and complaint management
+ */
+class MailgunService
+{
+    protected string $apiKey;
+    protected string $domain;
+    protected string $baseUrl;
+    protected string $region;
+
+    public function __construct()
+    {
+        $this->apiKey = config('services.mailgun.secret');
+        $this->domain = config('services.mailgun.domain');
+        $this->region = config('services.mailgun.region', 'us');
+
+        $this->baseUrl = $this->region === 'eu'
+            ? 'https://api.eu.mailgun.net/v3'
+            : 'https://api.mailgun.net/v3';
+    }
+
+    /**
+     * Make an authenticated request to the Mailgun API.
+     */
+    protected function request(string $method, string $endpoint, array $data = []): array
+    {
+        $response = Http::withBasicAuth('api', $this->apiKey)
+            ->$method("{$this->baseUrl}{$endpoint}", $data);
+
+        if (!$response->successful()) {
+            Log::error('Mailgun API error', [
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
+
+            throw new \Exception('Mailgun API request failed: ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Get domain information.
+     */
+    public function getDomain(): array
+    {
+        return $this->request('get', "/domains/{$this->domain}");
+    }
+
+    /**
+     * Get DNS records required for domain verification.
+     */
+    public function getDnsRecords(): array
+    {
+        $response = $this->getDomain();
+
+        return [
+            'receiving_dns_records' => $response['receiving_dns_records'] ?? [],
+            'sending_dns_records' => $response['sending_dns_records'] ?? [],
+        ];
+    }
+
+    /**
+     * Verify domain DNS settings.
+     */
+    public function verifyDomain(): array
+    {
+        return $this->request('put', "/domains/{$this->domain}/verify");
+    }
+
+    /**
+     * Get domain verification status.
+     */
+    public function getVerificationStatus(): array
+    {
+        $domain = $this->getDomain();
+
+        return [
+            'state' => $domain['domain']['state'] ?? 'unknown',
+            'is_active' => ($domain['domain']['state'] ?? '') === 'active',
+            'spam_action' => $domain['domain']['spam_action'] ?? null,
+            'created_at' => $domain['domain']['created_at'] ?? null,
+        ];
+    }
+
+    /**
+     * Add a new domain.
+     */
+    public function addDomain(string $domain, array $options = []): array
+    {
+        $data = array_merge([
+            'name' => $domain,
+            'spam_action' => 'disabled',
+            'wildcard' => false,
+        ], $options);
+
+        return $this->request('post', '/domains', $data);
+    }
+
+    /**
+     * Delete a domain.
+     */
+    public function deleteDomain(string $domain): array
+    {
+        return $this->request('delete', "/domains/{$domain}");
+    }
+
+    /**
+     * Get email sending statistics.
+     */
+    public function getStats(string $event = 'stored', int $duration = 7): array
+    {
+        return $this->request('get', "/{$this->domain}/stats/total", [
+            'event' => $event,
+            'duration' => "{$duration}d",
+        ]);
+    }
+
+    /**
+     * Get delivery statistics.
+     */
+    public function getDeliveryStats(int $days = 7): array
+    {
+        $stats = [];
+
+        $events = ['accepted', 'delivered', 'failed', 'opened', 'clicked', 'unsubscribed', 'complained'];
+
+        foreach ($events as $event) {
+            $response = $this->getStats($event, $days);
+            $stats[$event] = $response['stats'] ?? [];
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get bounces list.
+     */
+    public function getBounces(int $limit = 100): array
+    {
+        return $this->request('get', "/{$this->domain}/bounces", [
+            'limit' => $limit,
+        ]);
+    }
+
+    /**
+     * Delete a bounce record.
+     */
+    public function deleteBounce(string $email): array
+    {
+        return $this->request('delete', "/{$this->domain}/bounces/{$email}");
+    }
+
+    /**
+     * Get complaints list.
+     */
+    public function getComplaints(int $limit = 100): array
+    {
+        return $this->request('get', "/{$this->domain}/complaints", [
+            'limit' => $limit,
+        ]);
+    }
+
+    /**
+     * Delete a complaint record.
+     */
+    public function deleteComplaint(string $email): array
+    {
+        return $this->request('delete', "/{$this->domain}/complaints/{$email}");
+    }
+
+    /**
+     * Get unsubscribes list.
+     */
+    public function getUnsubscribes(int $limit = 100): array
+    {
+        return $this->request('get', "/{$this->domain}/unsubscribes", [
+            'limit' => $limit,
+        ]);
+    }
+
+    /**
+     * Add email to unsubscribe list.
+     */
+    public function addUnsubscribe(string $email, string $tag = '*'): array
+    {
+        return $this->request('post', "/{$this->domain}/unsubscribes", [
+            'address' => $email,
+            'tag' => $tag,
+        ]);
+    }
+
+    /**
+     * Remove email from unsubscribe list.
+     */
+    public function removeUnsubscribe(string $email): array
+    {
+        return $this->request('delete', "/{$this->domain}/unsubscribes/{$email}");
+    }
+
+    /**
+     * Get email events (logs).
+     */
+    public function getEvents(array $filters = []): array
+    {
+        $params = array_merge([
+            'limit' => 100,
+        ], $filters);
+
+        return $this->request('get', "/{$this->domain}/events", $params);
+    }
+
+    /**
+     * Get webhook configuration.
+     */
+    public function getWebhooks(): array
+    {
+        return $this->request('get', "/domains/{$this->domain}/webhooks");
+    }
+
+    /**
+     * Set webhook URL for an event.
+     */
+    public function setWebhook(string $event, string $url): array
+    {
+        return $this->request('post', "/domains/{$this->domain}/webhooks", [
+            'id' => $event,
+            'url' => $url,
+        ]);
+    }
+
+    /**
+     * Delete webhook.
+     */
+    public function deleteWebhook(string $event): array
+    {
+        return $this->request('delete', "/domains/{$this->domain}/webhooks/{$event}");
+    }
+
+    /**
+     * Get summary for dashboard display.
+     */
+    public function getDashboardSummary(): array
+    {
+        $stats = $this->getDeliveryStats(7);
+        $bounces = $this->getBounces(10);
+        $complaints = $this->getComplaints(10);
+        $status = $this->getVerificationStatus();
+
+        return [
+            'status' => $status,
+            'stats' => $stats,
+            'recent_bounces' => $bounces['items'] ?? [],
+            'recent_complaints' => $complaints['items'] ?? [],
+        ];
+    }
+}

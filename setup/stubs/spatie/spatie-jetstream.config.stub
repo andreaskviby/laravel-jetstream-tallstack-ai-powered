@@ -1,0 +1,173 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Team Permission Integration
+    |--------------------------------------------------------------------------
+    |
+    | This option enables the integration between Spatie Permission and
+    | Laravel Jetstream teams. When enabled, users can have different
+    | roles and permissions in different teams.
+    |
+    */
+    'team_permissions' => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | System Roles
+    |--------------------------------------------------------------------------
+    |
+    | These are the default system roles that cannot be deleted. They form
+    | the foundation of the permission system.
+    |
+    */
+    'system_roles' => [
+        'super_admin' => [
+            'display_name' => 'Super Admin',
+            'description' => 'Full system access across all teams',
+            'can_create_teams' => true,
+        ],
+        'team_admin' => [
+            'display_name' => 'Team Admin',
+            'description' => 'Full access within their own team',
+            'can_create_teams' => {{TEAM_ADMIN_CAN_CREATE_TEAMS}},
+        ],
+        'team_member' => [
+            'display_name' => 'Team Member',
+            'description' => 'Standard team member access',
+            'can_create_teams' => false,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Roles
+    |--------------------------------------------------------------------------
+    |
+    | These roles were defined during installation. You can modify or add
+    | more roles here. They will be seeded when you run the seeder.
+    |
+    */
+    'custom_roles' => {{CUSTOM_ROLES}},
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Role for New Team Members
+    |--------------------------------------------------------------------------
+    |
+    | When a user is invited to join a team, they will be assigned this
+    | role by default. You can change this to any valid role name.
+    |
+    */
+    'default_team_role' => 'team_member',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Role for Team Owners
+    |--------------------------------------------------------------------------
+    |
+    | When a user creates a new team, they will be assigned this role
+    | for that team. Usually this should be 'team_admin'.
+    |
+    */
+    'owner_team_role' => 'team_admin',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permission Groups
+    |--------------------------------------------------------------------------
+    |
+    | Organize permissions into logical groups for the admin interface.
+    | This makes it easier to manage permissions in Filament.
+    |
+    */
+    'permission_groups' => [
+        'teams' => [
+            'label' => 'Team Management',
+            'permissions' => [
+                'teams.create',
+                'teams.view',
+                'teams.update',
+                'teams.delete',
+                'teams.manage-members',
+                'teams.invite-members',
+                'teams.remove-members',
+                'teams.manage-branding',
+            ],
+        ],
+        'users' => [
+            'label' => 'User Management',
+            'permissions' => [
+                'users.view',
+                'users.create',
+                'users.update',
+                'users.delete',
+                'users.impersonate',
+            ],
+        ],
+        'subscriptions' => [
+            'label' => 'Subscription Management',
+            'permissions' => [
+                'subscriptions.view',
+                'subscriptions.manage',
+                'subscriptions.cancel',
+            ],
+        ],
+        'admin' => [
+            'label' => 'Admin Panel',
+            'permissions' => [
+                'admin.access',
+                'admin.view-dashboard',
+                'admin.manage-settings',
+            ],
+        ],
+        'content' => [
+            'label' => 'Content Management',
+            'permissions' => [
+                'content.view',
+                'content.create',
+                'content.update',
+                'content.delete',
+                'content.publish',
+            ],
+        ],
+        'todos' => [
+            'label' => 'Todo Management',
+            'permissions' => [
+                'todos.view',
+                'todos.create',
+                'todos.update',
+                'todos.delete',
+                'todos.assign',
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin Bypass
+    |--------------------------------------------------------------------------
+    |
+    | When true, users with the 'super_admin' role will bypass all
+    | permission checks. This is useful for testing and development.
+    |
+    */
+    'super_admin_bypass' => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure the caching behavior for roles and permissions.
+    |
+    */
+    'cache' => [
+        'expiration_time' => \DateInterval::createFromDateString('24 hours'),
+        'key' => 'spatie.permission.cache',
+        'store' => 'default',
+    ],
+
+];

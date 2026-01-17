@@ -1,0 +1,152 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Services\Infrastructure\CloudFlareService;
+use App\Services\Infrastructure\ForgeService;
+use App\Services\Infrastructure\MailgunService;
+use Illuminate\Console\Command;
+
+class DeployCommand extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'deploy
+                            {--site= : The Forge site ID to deploy}
+                            {--purge-cache : Purge CloudFlare cache after deployment}
+                            {--skip-deployment : Skip the actual deployment (useful for testing)}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Deploy the application to Laravel Forge and optionally purge CloudFlare cache';
+
+    protected ForgeService $forge;
+    protected ?CloudFlareService $cloudflare;
+
+    public function __construct(ForgeService $forge)
+    {
+        parent::__construct();
+        $this->forge = $forge;
+        $this->cloudflare = app()->has(CloudFlareService::class)
+            ? app(CloudFlareService::class)
+            : null;
+    }
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $siteId = $this->option('site');
+
+        if (!$siteId) {
+            // Try to get site ID from config or prompt
+            $sites = $this->forge->listSites();
+
+            if (empty($sites['sites'])) {
+                $this->error('No sites found on the server.');
+                return self::FAILURE;
+            }
+
+            $siteChoices = collect($sites['sites'])->mapWithKeys(function ($site) {
+                return [$site['id'] => $site['name'] . ' (' . $site['id'] . ')'];
+            })->toArray();
+
+            $siteId = $this->choice('Which site do you want to deploy?', $siteChoices);
+        }
+
+        $this->info("Starting deployment for site ID: {$siteId}");
+
+        // Step 1: Trigger deployment
+        if (!$this->option('skip-deployment')) {
+            $this->info('Triggering deployment on Forge...');
+
+            try {
+                $this->forge->deploySite($siteId);
+                $this->info('Deployment triggered successfully!');
+            } catch (\Exception $e) {
+                $this->error('Deployment failed: ' . $e->getMessage());
+                return self::FAILURE;
+            }
+
+            // Wait for deployment to complete
+            $this->info('Waiting for deployment to complete...');
+            $this->waitForDeployment($siteId);
+        }
+
+        // Step 2: Purge CloudFlare cache if requested
+        if ($this->option('purge-cache') && $this->cloudflare) {
+            $this->info('Purging CloudFlare cache...');
+
+            try {
+                $this->cloudflare->purgeCache();
+                $this->info('CloudFlare cache purged successfully!');
+            } catch (\Exception $e) {
+                $this->warn('Failed to purge CloudFlare cache: ' . $e->getMessage());
+            }
+        }
+
+        // Step 3: Show deployment log
+        $this->showDeploymentLog($siteId);
+
+        $this->newLine();
+        $this->info('Deployment complete!');
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Wait for deployment to complete.
+     */
+    protected function waitForDeployment(string $siteId): void
+    {
+        $maxAttempts = 60; // 5 minutes with 5-second intervals
+        $attempts = 0;
+
+        $this->output->write('  ');
+
+        while ($attempts < $maxAttempts) {
+            $site = $this->forge->getSite($siteId);
+
+            if (!($site['site']['deployment_status'] ?? null)) {
+                // No deployment in progress, we're done
+                break;
+            }
+
+            $this->output->write('.');
+            sleep(5);
+            $attempts++;
+        }
+
+        $this->newLine();
+
+        if ($attempts >= $maxAttempts) {
+            $this->warn('Deployment is taking longer than expected. Check Forge for status.');
+        }
+    }
+
+    /**
+     * Show the deployment log.
+     */
+    protected function showDeploymentLog(string $siteId): void
+    {
+        $this->newLine();
+        $this->info('Deployment Log:');
+        $this->line('─────────────────────────────────────────');
+
+        try {
+            $log = $this->forge->getDeploymentLog($siteId);
+            $this->line($log['output'] ?? 'No log available');
+        } catch (\Exception $e) {
+            $this->warn('Could not retrieve deployment log: ' . $e->getMessage());
+        }
+
+        $this->line('─────────────────────────────────────────');
+    }
+}

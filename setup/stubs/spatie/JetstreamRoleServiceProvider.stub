@@ -1,0 +1,98 @@
+<?php
+
+namespace App\Providers;
+
+use App\Models\Team;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
+use Laravel\Jetstream\Jetstream;
+
+class JetstreamRoleServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        $this->configurePermissions();
+        $this->configureGates();
+    }
+
+    /**
+     * Configure Jetstream permissions with Spatie roles.
+     */
+    protected function configurePermissions(): void
+    {
+        // Map Jetstream roles to Spatie roles
+        Jetstream::role('admin', 'Team Admin', [
+            'teams:update',
+            'teams:manage-members',
+            'teams:invite-members',
+            'teams:remove-members',
+            'teams:manage-branding',
+        ])->description('Team administrators can manage team settings and members.');
+
+        Jetstream::role('editor', 'Editor', [
+            'content:create',
+            'content:update',
+            'content:delete',
+        ])->description('Editors can create and manage content.');
+
+        Jetstream::role('member', 'Member', [
+            'content:view',
+        ])->description('Members can view team content.');
+    }
+
+    /**
+     * Configure application gates for Spatie integration.
+     */
+    protected function configureGates(): void
+    {
+        // Super admin bypasses all gates
+        Gate::before(function (User $user, string $ability) {
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
+        });
+
+        // Team creation gate
+        Gate::define('create-teams', function (User $user) {
+            return $user->canCreateTeams();
+        });
+
+        // Team management gates
+        Gate::define('manage-team', function (User $user, Team $team) {
+            return $user->isTeamAdmin($team);
+        });
+
+        Gate::define('manage-team-members', function (User $user, Team $team) {
+            return $user->hasTeamPermission('teams.manage-members', $team);
+        });
+
+        Gate::define('invite-team-members', function (User $user, Team $team) {
+            return $user->hasTeamPermission('teams.invite-members', $team);
+        });
+
+        Gate::define('remove-team-members', function (User $user, Team $team) {
+            return $user->hasTeamPermission('teams.remove-members', $team);
+        });
+
+        Gate::define('manage-team-branding', function (User $user, Team $team) {
+            return $user->hasTeamPermission('teams.manage-branding', $team);
+        });
+
+        // Admin panel access
+        Gate::define('access-admin-panel', function (User $user) {
+            return $user->hasPermissionTo('admin.access');
+        });
+    }
+}

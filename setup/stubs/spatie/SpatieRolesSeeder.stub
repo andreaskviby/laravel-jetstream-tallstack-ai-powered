@@ -1,0 +1,224 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+
+class SpatieRolesSeeder extends Seeder
+{
+    /**
+     * System roles that are required and cannot be deleted.
+     */
+    protected array $systemRoles = [
+        'super_admin' => [
+            'display_name' => 'Super Admin',
+            'description' => 'Full system access across all teams',
+            'can_create_teams' => true,
+            'is_system_role' => true,
+        ],
+        'team_admin' => [
+            'display_name' => 'Team Admin',
+            'description' => 'Full access within their own team',
+            'can_create_teams' => {{TEAM_ADMIN_CAN_CREATE_TEAMS}},
+            'is_system_role' => true,
+        ],
+        'team_member' => [
+            'display_name' => 'Team Member',
+            'description' => 'Standard team member access',
+            'can_create_teams' => false,
+            'is_system_role' => true,
+        ],
+    ];
+
+    /**
+     * Custom roles defined during installation.
+     */
+    protected array $customRoles = {{CUSTOM_ROLES}};
+
+    /**
+     * Base permissions for the system.
+     */
+    protected array $permissions = [
+        // Team Management
+        'teams.create' => 'Create new teams',
+        'teams.view' => 'View team details',
+        'teams.update' => 'Update team settings',
+        'teams.delete' => 'Delete teams',
+        'teams.manage-members' => 'Manage team members',
+        'teams.invite-members' => 'Invite new members',
+        'teams.remove-members' => 'Remove team members',
+        'teams.manage-branding' => 'Manage team branding (logo, colors)',
+
+        // User Management
+        'users.view' => 'View user profiles',
+        'users.create' => 'Create new users',
+        'users.update' => 'Update user profiles',
+        'users.delete' => 'Delete users',
+        'users.impersonate' => 'Impersonate other users',
+
+        // Subscription Management
+        'subscriptions.view' => 'View subscription details',
+        'subscriptions.manage' => 'Manage subscriptions',
+        'subscriptions.cancel' => 'Cancel subscriptions',
+
+        // Admin Panel Access
+        'admin.access' => 'Access admin panel',
+        'admin.view-dashboard' => 'View admin dashboard',
+        'admin.manage-settings' => 'Manage system settings',
+
+        // Content Management
+        'content.view' => 'View content',
+        'content.create' => 'Create content',
+        'content.update' => 'Update content',
+        'content.delete' => 'Delete content',
+        'content.publish' => 'Publish content',
+
+        // Todo System
+        'todos.view' => 'View todos',
+        'todos.create' => 'Create todos',
+        'todos.update' => 'Update todos',
+        'todos.delete' => 'Delete todos',
+        'todos.assign' => 'Assign todos to team members',
+    ];
+
+    /**
+     * Role-permission mapping.
+     */
+    protected array $rolePermissions = [
+        'super_admin' => '*', // All permissions
+        'team_admin' => [
+            'teams.view',
+            'teams.update',
+            'teams.manage-members',
+            'teams.invite-members',
+            'teams.remove-members',
+            'teams.manage-branding',
+            'users.view',
+            'subscriptions.view',
+            'subscriptions.manage',
+            'content.view',
+            'content.create',
+            'content.update',
+            'content.delete',
+            'content.publish',
+            'todos.view',
+            'todos.create',
+            'todos.update',
+            'todos.delete',
+            'todos.assign',
+        ],
+        'team_member' => [
+            'teams.view',
+            'users.view',
+            'content.view',
+            'content.create',
+            'content.update',
+            'todos.view',
+            'todos.create',
+            'todos.update',
+        ],
+    ];
+
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        // Reset cached roles and permissions
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // Create all permissions
+        $this->createPermissions();
+
+        // Create system roles
+        $this->createSystemRoles();
+
+        // Create custom roles
+        $this->createCustomRoles();
+
+        // Assign permissions to roles
+        $this->assignPermissions();
+
+        $this->command->info('Spatie roles and permissions seeded successfully!');
+    }
+
+    /**
+     * Create all permissions.
+     */
+    protected function createPermissions(): void
+    {
+        foreach ($this->permissions as $name => $description) {
+            Permission::firstOrCreate(
+                ['name' => $name, 'guard_name' => 'web'],
+                ['description' => $description]
+            );
+        }
+
+        $this->command->info('Created ' . count($this->permissions) . ' permissions');
+    }
+
+    /**
+     * Create system roles.
+     */
+    protected function createSystemRoles(): void
+    {
+        foreach ($this->systemRoles as $name => $config) {
+            $role = Role::firstOrCreate(
+                ['name' => $name, 'guard_name' => 'web'],
+                [
+                    'display_name' => $config['display_name'],
+                    'description' => $config['description'],
+                    'can_create_teams' => $config['can_create_teams'],
+                    'is_system_role' => $config['is_system_role'],
+                ]
+            );
+
+            $this->command->info("Created system role: {$config['display_name']}");
+        }
+    }
+
+    /**
+     * Create custom roles defined during installation.
+     */
+    protected function createCustomRoles(): void
+    {
+        foreach ($this->customRoles as $role) {
+            Role::firstOrCreate(
+                ['name' => $role['slug'], 'guard_name' => 'web'],
+                [
+                    'display_name' => $role['name'],
+                    'description' => $role['description'],
+                    'can_create_teams' => $role['can_create_teams'] ?? false,
+                    'is_system_role' => false,
+                ]
+            );
+
+            $this->command->info("Created custom role: {$role['name']}");
+        }
+    }
+
+    /**
+     * Assign permissions to roles.
+     */
+    protected function assignPermissions(): void
+    {
+        foreach ($this->rolePermissions as $roleName => $permissions) {
+            $role = Role::findByName($roleName);
+
+            if ($permissions === '*') {
+                // Super admin gets all permissions
+                $role->syncPermissions(Permission::all());
+            } else {
+                $role->syncPermissions($permissions);
+            }
+        }
+
+        // Assign permissions to custom roles (default: team_member permissions)
+        foreach ($this->customRoles as $customRole) {
+            $role = Role::findByName($customRole['slug']);
+            $role->syncPermissions($this->rolePermissions['team_member']);
+        }
+    }
+}

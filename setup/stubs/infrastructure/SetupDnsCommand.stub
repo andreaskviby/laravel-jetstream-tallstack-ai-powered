@@ -1,0 +1,250 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Services\Infrastructure\CloudFlareService;
+use App\Services\Infrastructure\MailgunService;
+use Illuminate\Console\Command;
+
+class SetupDnsCommand extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'setup:dns
+                            {domain : The domain to configure}
+                            {--ip= : The server IP address}
+                            {--mail : Configure mail records for Mailgun}
+                            {--verify : Verify domain configuration}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Set up CloudFlare DNS records for your domain';
+
+    protected CloudFlareService $cloudflare;
+    protected ?MailgunService $mailgun;
+
+    public function __construct(CloudFlareService $cloudflare)
+    {
+        parent::__construct();
+        $this->cloudflare = $cloudflare;
+        $this->mailgun = app()->has(MailgunService::class)
+            ? app(MailgunService::class)
+            : null;
+    }
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $domain = $this->argument('domain');
+        $ip = $this->option('ip');
+        $setupMail = $this->option('mail');
+        $verify = $this->option('verify');
+
+        $this->info("Setting up DNS for: {$domain}");
+        $this->newLine();
+
+        // Step 1: Create A record if IP provided
+        if ($ip) {
+            $this->setupARecord($domain, $ip);
+        }
+
+        // Step 2: Create www CNAME
+        $this->setupWwwRecord($domain);
+
+        // Step 3: Set up mail records if requested
+        if ($setupMail && $this->mailgun) {
+            $this->setupMailRecords($domain);
+        }
+
+        // Step 4: Configure SSL settings
+        $this->configureSSL();
+
+        // Step 5: Verify if requested
+        if ($verify) {
+            $this->verifyConfiguration($domain);
+        }
+
+        $this->newLine();
+        $this->info('DNS setup complete!');
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Set up the A record.
+     */
+    protected function setupARecord(string $domain, string $ip): void
+    {
+        $this->info('Creating A record...');
+
+        try {
+            // Check if record already exists
+            $existing = $this->cloudflare->listDnsRecords([
+                'type' => 'A',
+                'name' => $domain,
+            ]);
+
+            if (!empty($existing['result'])) {
+                $this->warn("A record already exists. Updating...");
+                $recordId = $existing['result'][0]['id'];
+                $this->cloudflare->updateDnsRecord($recordId, [
+                    'type' => 'A',
+                    'name' => $domain,
+                    'content' => $ip,
+                    'proxied' => true,
+                ]);
+            } else {
+                $this->cloudflare->createARecord($domain, $ip);
+            }
+
+            $this->info("  ✓ A record: {$domain} → {$ip}");
+        } catch (\Exception $e) {
+            $this->error("  ✗ Failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Set up www CNAME record.
+     */
+    protected function setupWwwRecord(string $domain): void
+    {
+        $this->info('Creating www CNAME record...');
+
+        try {
+            $wwwDomain = "www.{$domain}";
+
+            $existing = $this->cloudflare->listDnsRecords([
+                'type' => 'CNAME',
+                'name' => $wwwDomain,
+            ]);
+
+            if (!empty($existing['result'])) {
+                $this->warn("www CNAME already exists.");
+            } else {
+                $this->cloudflare->createCnameRecord('www', $domain);
+            }
+
+            $this->info("  ✓ CNAME record: www → {$domain}");
+        } catch (\Exception $e) {
+            $this->error("  ✗ Failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Set up mail records for Mailgun.
+     */
+    protected function setupMailRecords(string $domain): void
+    {
+        $this->info('Setting up mail records for Mailgun...');
+
+        if (!$this->mailgun) {
+            $this->warn('Mailgun service not configured. Skipping mail records.');
+            return;
+        }
+
+        try {
+            // Get DNS records from Mailgun
+            $dnsRecords = $this->mailgun->getDnsRecords();
+
+            // Create sending records
+            foreach ($dnsRecords['sending_dns_records'] ?? [] as $record) {
+                $this->createMailDnsRecord($record);
+            }
+
+            $this->info("  ✓ Mail records configured");
+
+            // Verify domain with Mailgun
+            $this->info('Verifying domain with Mailgun...');
+            $this->mailgun->verifyDomain();
+            $this->info("  ✓ Domain verification initiated");
+        } catch (\Exception $e) {
+            $this->error("  ✗ Failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create a mail DNS record in CloudFlare.
+     */
+    protected function createMailDnsRecord(array $record): void
+    {
+        try {
+            $this->cloudflare->createDnsRecord(
+                $record['record_type'],
+                $record['name'],
+                $record['value'],
+                ['proxied' => false]
+            );
+            $this->line("    Created {$record['record_type']} record: {$record['name']}");
+        } catch (\Exception $e) {
+            $this->warn("    Skipping {$record['name']}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Configure SSL settings.
+     */
+    protected function configureSSL(): void
+    {
+        $this->info('Configuring SSL settings...');
+
+        try {
+            // Set SSL mode to Full (Strict)
+            $this->cloudflare->setSslMode('strict');
+            $this->info("  ✓ SSL mode: Full (Strict)");
+
+            // Enable Always Use HTTPS
+            $this->cloudflare->enableAlwaysHttps();
+            $this->info("  ✓ Always Use HTTPS: Enabled");
+        } catch (\Exception $e) {
+            $this->error("  ✗ Failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Verify the DNS configuration.
+     */
+    protected function verifyConfiguration(string $domain): void
+    {
+        $this->newLine();
+        $this->info('Verifying DNS configuration...');
+
+        // List all DNS records
+        $records = $this->cloudflare->listDnsRecords();
+
+        $this->newLine();
+        $this->table(
+            ['Type', 'Name', 'Content', 'Proxied', 'TTL'],
+            collect($records['result'] ?? [])->map(function ($record) {
+                return [
+                    $record['type'],
+                    $record['name'],
+                    substr($record['content'], 0, 40) . (strlen($record['content']) > 40 ? '...' : ''),
+                    $record['proxied'] ? 'Yes' : 'No',
+                    $record['ttl'] === 1 ? 'Auto' : $record['ttl'],
+                ];
+            })->toArray()
+        );
+
+        // Check Mailgun verification if configured
+        if ($this->mailgun) {
+            $this->newLine();
+            $this->info('Checking Mailgun domain status...');
+
+            try {
+                $status = $this->mailgun->getVerificationStatus();
+                $this->info("  Domain state: " . $status['state']);
+                $this->info("  Is active: " . ($status['is_active'] ? 'Yes' : 'No'));
+            } catch (\Exception $e) {
+                $this->warn("  Could not verify Mailgun status: " . $e->getMessage());
+            }
+        }
+    }
+}

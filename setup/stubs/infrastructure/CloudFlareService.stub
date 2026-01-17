@@ -1,0 +1,213 @@
+<?php
+
+namespace App\Services\Infrastructure;
+
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * CloudFlare DNS and CDN management service.
+ *
+ * This service provides integration with CloudFlare's API for:
+ * - DNS record management
+ * - SSL/TLS configuration
+ * - Caching and performance optimization
+ * - Security settings
+ */
+class CloudFlareService
+{
+    protected string $apiToken;
+    protected string $zoneId;
+    protected string $baseUrl = 'https://api.cloudflare.com/client/v4';
+
+    public function __construct()
+    {
+        $this->apiToken = config('services.cloudflare.api_token');
+        $this->zoneId = config('services.cloudflare.zone_id');
+    }
+
+    /**
+     * Make an authenticated request to the CloudFlare API.
+     */
+    protected function request(string $method, string $endpoint, array $data = []): array
+    {
+        $response = Http::withToken($this->apiToken)
+            ->$method("{$this->baseUrl}{$endpoint}", $data);
+
+        if (!$response->successful()) {
+            Log::error('CloudFlare API error', [
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
+
+            throw new \Exception('CloudFlare API request failed: ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * List all DNS records for the zone.
+     */
+    public function listDnsRecords(array $filters = []): array
+    {
+        $query = http_build_query($filters);
+        $endpoint = "/zones/{$this->zoneId}/dns_records" . ($query ? "?{$query}" : '');
+
+        return $this->request('get', $endpoint);
+    }
+
+    /**
+     * Create a new DNS record.
+     */
+    public function createDnsRecord(string $type, string $name, string $content, array $options = []): array
+    {
+        $data = array_merge([
+            'type' => $type,
+            'name' => $name,
+            'content' => $content,
+            'ttl' => 1, // Auto
+            'proxied' => true,
+        ], $options);
+
+        return $this->request('post', "/zones/{$this->zoneId}/dns_records", $data);
+    }
+
+    /**
+     * Update an existing DNS record.
+     */
+    public function updateDnsRecord(string $recordId, array $data): array
+    {
+        return $this->request('put', "/zones/{$this->zoneId}/dns_records/{$recordId}", $data);
+    }
+
+    /**
+     * Delete a DNS record.
+     */
+    public function deleteDnsRecord(string $recordId): array
+    {
+        return $this->request('delete', "/zones/{$this->zoneId}/dns_records/{$recordId}");
+    }
+
+    /**
+     * Create an A record pointing to a server IP.
+     */
+    public function createARecord(string $name, string $ip, bool $proxied = true): array
+    {
+        return $this->createDnsRecord('A', $name, $ip, ['proxied' => $proxied]);
+    }
+
+    /**
+     * Create a CNAME record.
+     */
+    public function createCnameRecord(string $name, string $target, bool $proxied = true): array
+    {
+        return $this->createDnsRecord('CNAME', $name, $target, ['proxied' => $proxied]);
+    }
+
+    /**
+     * Create mail records (MX, SPF, DKIM).
+     */
+    public function createMailRecords(string $domain, string $mailgunDomain): array
+    {
+        $records = [];
+
+        // MX Records for Mailgun
+        $records[] = $this->createDnsRecord('MX', $domain, "mxa.mailgun.org", [
+            'priority' => 10,
+            'proxied' => false,
+        ]);
+        $records[] = $this->createDnsRecord('MX', $domain, "mxb.mailgun.org", [
+            'priority' => 10,
+            'proxied' => false,
+        ]);
+
+        // SPF Record
+        $records[] = $this->createDnsRecord('TXT', $domain, "v=spf1 include:mailgun.org ~all", [
+            'proxied' => false,
+        ]);
+
+        return $records;
+    }
+
+    /**
+     * Purge all cached content.
+     */
+    public function purgeCache(): array
+    {
+        return $this->request('post', "/zones/{$this->zoneId}/purge_cache", [
+            'purge_everything' => true,
+        ]);
+    }
+
+    /**
+     * Purge specific URLs from cache.
+     */
+    public function purgeCacheByUrl(array $urls): array
+    {
+        return $this->request('post', "/zones/{$this->zoneId}/purge_cache", [
+            'files' => $urls,
+        ]);
+    }
+
+    /**
+     * Get zone details.
+     */
+    public function getZoneDetails(): array
+    {
+        return $this->request('get', "/zones/{$this->zoneId}");
+    }
+
+    /**
+     * Update zone settings.
+     */
+    public function updateZoneSetting(string $setting, $value): array
+    {
+        return $this->request('patch', "/zones/{$this->zoneId}/settings/{$setting}", [
+            'value' => $value,
+        ]);
+    }
+
+    /**
+     * Enable development mode (bypasses cache for 3 hours).
+     */
+    public function enableDevelopmentMode(): array
+    {
+        return $this->updateZoneSetting('development_mode', 'on');
+    }
+
+    /**
+     * Disable development mode.
+     */
+    public function disableDevelopmentMode(): array
+    {
+        return $this->updateZoneSetting('development_mode', 'off');
+    }
+
+    /**
+     * Set SSL mode (off, flexible, full, strict).
+     */
+    public function setSslMode(string $mode): array
+    {
+        return $this->updateZoneSetting('ssl', $mode);
+    }
+
+    /**
+     * Enable Always Use HTTPS.
+     */
+    public function enableAlwaysHttps(): array
+    {
+        return $this->updateZoneSetting('always_use_https', 'on');
+    }
+
+    /**
+     * Get analytics for the zone.
+     */
+    public function getAnalytics(string $since = '-1440'): array
+    {
+        return $this->request('get', "/zones/{$this->zoneId}/analytics/dashboard", [
+            'since' => $since,
+        ]);
+    }
+}

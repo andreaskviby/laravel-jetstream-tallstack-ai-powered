@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * Add this to your config/services.php file.
+ */
+
+return [
+    // ... existing services ...
+
+    /*
+    |--------------------------------------------------------------------------
+    | CloudFlare Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for CloudFlare DNS and CDN management.
+    |
+    */
+    'cloudflare' => [
+        'api_token' => env('CLOUDFLARE_API_TOKEN'),
+        'zone_id' => env('CLOUDFLARE_ZONE_ID'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mailgun Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for Mailgun email delivery service.
+    |
+    */
+    'mailgun' => [
+        'domain' => env('MAILGUN_DOMAIN'),
+        'secret' => env('MAILGUN_SECRET'),
+        'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
+        'scheme' => 'https',
+        'region' => env('MAILGUN_REGION', 'us'), // 'us' or 'eu'
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Laravel Forge Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for Laravel Forge server management.
+    |
+    */
+    'forge' => [
+        'api_token' => env('FORGE_API_TOKEN'),
+        'server_id' => env('FORGE_SERVER_ID'),
+    ],
+];

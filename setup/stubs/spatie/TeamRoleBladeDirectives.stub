@@ -1,0 +1,89 @@
+<?php
+
+/**
+ * Register Blade Directives for Team Roles
+ *
+ * Add this to the boot() method of your AppServiceProvider:
+ *
+ *   $this->registerTeamRoleDirectives();
+ */
+
+use Illuminate\Support\Facades\Blade;
+
+/**
+ * Register custom Blade directives for team role checks.
+ */
+protected function registerTeamRoleDirectives(): void
+{
+    /**
+     * Check if user has a team role.
+     *
+     * Usage:
+     *   @teamRole('team_admin')
+     *       Show admin content
+     *   @endteamRole
+     */
+    Blade::if('teamRole', function (string $role) {
+        return auth()->check() && auth()->user()->hasTeamRole($role);
+    });
+
+    /**
+     * Check if user has any of the specified team roles.
+     *
+     * Usage:
+     *   @teamRoles(['team_admin', 'editor'])
+     *       Show content for admins or editors
+     *   @endteamRoles
+     */
+    Blade::if('teamRoles', function (array $roles) {
+        return auth()->check() && auth()->user()->hasAnyTeamRole($roles);
+    });
+
+    /**
+     * Check if user has a team permission.
+     *
+     * Usage:
+     *   @teamPermission('content.publish')
+     *       Show publish button
+     *   @endteamPermission
+     */
+    Blade::if('teamPermission', function (string $permission) {
+        return auth()->check() && auth()->user()->hasTeamPermission($permission);
+    });
+
+    /**
+     * Check if user is a super admin.
+     *
+     * Usage:
+     *   @superAdmin
+     *       Show super admin content
+     *   @endsuperAdmin
+     */
+    Blade::if('superAdmin', function () {
+        return auth()->check() && auth()->user()->isSuperAdmin();
+    });
+
+    /**
+     * Check if user is a team admin.
+     *
+     * Usage:
+     *   @teamAdmin
+     *       Show team admin content
+     *   @endteamAdmin
+     */
+    Blade::if('teamAdmin', function () {
+        return auth()->check() && auth()->user()->isTeamAdmin();
+    });
+
+    /**
+     * Check if user can create teams.
+     *
+     * Usage:
+     *   @canCreateTeams
+     *       <a href="/teams/create">Create Team</a>
+     *   @endcanCreateTeams
+     */
+    Blade::if('canCreateTeams', function () {
+        return auth()->check() && auth()->user()->canCreateTeams();
+    });
+}

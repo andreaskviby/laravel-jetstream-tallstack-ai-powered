@@ -1,0 +1,175 @@
+# Spatie Roles & Permissions Integration
+
+This document describes how Spatie Laravel Permission is integrated with Laravel Jetstream teams in this project.
+
+## Overview
+
+The integration provides:
+
+1. **Team-scoped roles**: Users can have different roles in different teams
+2. **System roles**: Super Admin, Team Admin, and Team Member roles that cannot be deleted
+3. **Custom roles**: Additional roles defined during installation
+4. **Filament resources**: Manage roles and permissions in the admin panel
+5. **Blade directives**: Easy permission checks in views
+
+## System Roles
+
+| Role | Description | Can Create Teams |
+|------|-------------|------------------|
+| `super_admin` | Full system access across all teams | Yes |
+| `team_admin` | Full access within their own team | Configurable |
+| `team_member` | Standard team member access | No |
+
+## Usage
+
+### Check Team Roles in Controllers
+
+```php
+// Check if user has a specific role in their current team
+if ($user->hasTeamRole('team_admin')) {
+    // User is a team admin
+}
+
+// Check if user has any of the given roles
+if ($user->hasAnyTeamRole(['team_admin', 'editor'])) {
+    // User is either a team admin or editor
+}
+
+// Check a specific team (not current team)
+if ($user->hasTeamRole('team_admin', $otherTeam)) {
+    // User is admin in the other team
+}
+```
+
+### Check Team Permissions
+
+```php
+// Check team permission
+if ($user->hasTeamPermission('content.publish')) {
+    // User can publish content
+}
+
+// Get all team permissions
+$permissions = $user->getTeamPermissions();
+```
+
+### Use Middleware
+
+```php
+// In routes/web.php
+Route::middleware('team.role:team_admin')->group(function () {
+    // Only team admins can access these routes
+});
+
+Route::middleware('team.permission:content.publish')->group(function () {
+    // Only users with publish permission
+});
+```
+
+### Blade Directives
+
+```blade
+@teamRole('team_admin')
+    <p>You are a team admin!</p>
+@endteamRole
+
+@teamPermission('content.publish')
+    <button>Publish Content</button>
+@endteamPermission
+
+@superAdmin
+    <a href="/admin">Super Admin Panel</a>
+@endsuperAdmin
+
+@canCreateTeams
+    <a href="/teams/create">Create New Team</a>
+@endcanCreateTeams
+```
+
+### Assign Roles
+
+```php
+// Assign a team role
+$user->assignTeamRole('team_admin', $team);
+
+// Assign global role (super admin)
+$user->assignRole('super_admin');
+```
+
+## Filament Admin Panel
+
+Manage roles and permissions through the Filament admin panel:
+
+- `/admin/roles` - Manage roles
+- `/admin/permissions` - Manage permissions
+
+## Available Permissions
+
+### Team Management
+- `teams.create` - Create new teams
+- `teams.view` - View team details
+- `teams.update` - Update team settings
+- `teams.delete` - Delete teams
+- `teams.manage-members` - Manage team members
+- `teams.invite-members` - Invite new members
+- `teams.remove-members` - Remove team members
+- `teams.manage-branding` - Manage team logo and colors
+
+### User Management
+- `users.view` - View user profiles
+- `users.create` - Create new users
+- `users.update` - Update user profiles
+- `users.delete` - Delete users
+- `users.impersonate` - Impersonate other users
+
+### Subscription Management
+- `subscriptions.view` - View subscription details
+- `subscriptions.manage` - Manage subscriptions
+- `subscriptions.cancel` - Cancel subscriptions
+
+### Admin Panel
+- `admin.access` - Access admin panel
+- `admin.view-dashboard` - View admin dashboard
+- `admin.manage-settings` - Manage system settings
+
+### Content Management
+- `content.view` - View content
+- `content.create` - Create content
+- `content.update` - Update content
+- `content.delete` - Delete content
+- `content.publish` - Publish content
+
+### Todo Management
+- `todos.view` - View todos
+- `todos.create` - Create todos
+- `todos.update` - Update todos
+- `todos.delete` - Delete todos
+- `todos.assign` - Assign todos to team members
+
+## Seeding Roles
+
+Run the seeder to create default roles and permissions:
+
+```bash
+php artisan db:seed --class=SpatieRolesSeeder
+```
+
+## Configuration
+
+Edit `config/spatie-jetstream.php` to customize:
+
+- System roles
+- Custom roles
+- Default team roles
+- Permission groups
+- Cache settings
+
+## Security Notes
+
+1. **Super Admin Bypass**: Super admins bypass all permission checks by default
+2. **System Roles**: Cannot be deleted through the admin panel
+3. **Team Context**: Always use team-aware methods for permission checks
+4. **Cache**: Permissions are cached - clear cache after changes:
+   ```bash
+   php artisan permission:cache-reset
+   ```
