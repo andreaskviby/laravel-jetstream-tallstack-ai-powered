@@ -1,0 +1,89 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Todo;
+use Illuminate\Console\Command;
+
+class TodoShow extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'todo:show
+                            {id : The ID of the todo to display}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Display details of a specific todo item';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $id = $this->argument('id');
+        $todo = Todo::find($id);
+
+        if (!$todo) {
+            $this->error("Todo with ID {$id} not found.");
+            return self::FAILURE;
+        }
+
+        $this->info("Todo Details:\n");
+        $this->line("  <fg=cyan>ID:</> {$todo->id}");
+        $this->line("  <fg=cyan>Title:</> {$todo->title}");
+        
+        if ($todo->description) {
+            $this->line("  <fg=cyan>Description:</> {$todo->description}");
+        }
+        
+        $this->line("  <fg=cyan>Priority:</> " . $this->colorPriority($todo->priority));
+        $this->line("  <fg=cyan>Status:</> " . $this->colorStatus($todo->status));
+        
+        if ($todo->context) {
+            $this->line("  <fg=cyan>Context:</>");
+            $this->line("    {$todo->context}");
+        }
+        
+        $this->line("  <fg=cyan>Created:</> {$todo->created_at->format('Y-m-d H:i:s')}");
+        $this->line("  <fg=cyan>Updated:</> {$todo->updated_at->format('Y-m-d H:i:s')}");
+        
+        if ($todo->completed_at) {
+            $this->line("  <fg=cyan>Completed:</> {$todo->completed_at->format('Y-m-d H:i:s')}");
+        }
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Colorize priority text.
+     */
+    private function colorPriority(string $priority): string
+    {
+        return match($priority) {
+            'high' => "<fg=red>{$priority}</>",
+            'medium' => "<fg=yellow>{$priority}</>",
+            'low' => "<fg=green>{$priority}</>",
+            default => $priority,
+        };
+    }
+
+    /**
+     * Colorize status text.
+     */
+    private function colorStatus(string $status): string
+    {
+        return match($status) {
+            'completed' => "<fg=green>{$status}</>",
+            'in_progress' => "<fg=yellow>{$status}</>",
+            'pending' => "<fg=gray>{$status}</>",
+            default => $status,
+        };
+    }
+}

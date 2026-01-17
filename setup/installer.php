@@ -48,6 +48,9 @@ class Installer
         // Publish and configure Jetstream
         $this->configureJetstream();
         
+        // Install Todo management system
+        $this->installTodoManagement();
+        
         // Generate application key
         $this->generateAppKey();
         
@@ -337,6 +340,63 @@ class Installer
         $this->printSuccess("Jetstream configured");
     }
 
+    private function installTodoManagement()
+    {
+        $this->printHeader("Installing Todo Management System");
+        
+        $this->printInfo("Installing todo commands and migrations...");
+        
+        $stubsDir = __DIR__ . '/stubs';
+        
+        // Create directories if they don't exist
+        $commandsDir = app_path('Console/Commands');
+        $modelsDir = app_path('Models');
+        $migrationsDir = database_path('migrations');
+        
+        if (!file_exists($commandsDir)) {
+            mkdir($commandsDir, 0755, true);
+        }
+        
+        // Copy Todo model
+        $todoModelStub = $stubsDir . '/Todo.stub';
+        if (file_exists($todoModelStub)) {
+            copy($todoModelStub, $modelsDir . '/Todo.php');
+            $this->printSuccess("Todo model created");
+        }
+        
+        // Copy artisan commands
+        $commands = [
+            'TodoAdd',
+            'TodoList',
+            'TodoUpdate',
+            'TodoComplete',
+            'TodoDelete',
+            'TodoShow',
+        ];
+        
+        foreach ($commands as $command) {
+            $stubFile = $stubsDir . "/{$command}.stub";
+            if (file_exists($stubFile)) {
+                copy($stubFile, $commandsDir . "/{$command}.php");
+            }
+        }
+        $this->printSuccess("Todo commands created (todo:add, todo:list, todo:update, todo:complete, todo:delete, todo:show)");
+        
+        // Copy migration
+        $migrationStub = $stubsDir . '/create_todos_table.stub';
+        if (file_exists($migrationStub)) {
+            // Use microseconds to avoid timestamp conflicts
+            $timestamp = date('Y_m_d_His') . substr((string) microtime(), 2, 6);
+            $migrationFile = $migrationsDir . "/{$timestamp}_create_todos_table.php";
+            copy($migrationStub, $migrationFile);
+            $this->printSuccess("Todo migration created");
+        }
+        
+        $this->config['todo_management'] = true;
+        $this->printSuccess("Todo management system installed successfully");
+        $this->printInfo("Run 'php artisan migrate' to create the todos table");
+    }
+
     private function generateAppKey()
     {
         $this->printInfo("Generating application key...");
@@ -363,6 +423,10 @@ class Installer
             echo $this->colorize("✓ Claude AI configured\n", 'green');
         }
         
+        if ($this->config['todo_management'] ?? false) {
+            echo $this->colorize("✓ Todo management system installed\n", 'green');
+        }
+        
         echo "\n";
         $this->printHeader("Next Steps");
         
@@ -378,8 +442,16 @@ class Installer
         echo $this->colorize("   http://localhost:8000\n", 'cyan');
         echo "\n";
         
+        if ($this->config['todo_management'] ?? false) {
+            echo "4. Try the todo commands:\n";
+            echo $this->colorize("   php artisan todo:add \"Your first todo\"\n", 'cyan');
+            echo $this->colorize("   php artisan todo:list\n", 'cyan');
+            echo "\n";
+        }
+        
         if ($this->config['otp_enabled'] ?? false) {
-            echo "4. For OTP authentication implementation, check:\n";
+            $step = ($this->config['todo_management'] ?? false) ? "5" : "4";
+            echo "{$step}. For OTP authentication implementation, check:\n";
             echo $this->colorize("   - app/Actions/Fortify/*\n", 'cyan');
             echo $this->colorize("   - resources/views/auth/*\n", 'cyan');
             echo "\n";
