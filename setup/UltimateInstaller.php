@@ -1971,7 +1971,8 @@ echo "Completed at " . date("Y-m-d H:i:s") . "\n";
             return;
         }
 
-        $this->runCommandInProject("composer require filament/filament:\"^5.0\" --no-interaction");
+        // Use -W flag to allow Livewire upgrade from v3 to v4 (required by Filament 5)
+        $this->runCommandInProject("composer require filament/filament:\"^5.0\" -W --no-interaction");
         $this->runCommandInProject("php artisan filament:install --panels --no-interaction");
     }
 
@@ -1980,6 +1981,9 @@ echo "Completed at " . date("Y-m-d H:i:s") . "\n";
         // Install Spatie permission package
         $this->runCommandInProject("composer require spatie/laravel-permission --no-interaction");
         $this->runCommandInProject("php artisan vendor:publish --provider=\"Spatie\\Permission\\PermissionServiceProvider\" --no-interaction");
+
+        // Run Spatie migrations immediately to ensure permissions table exists
+        $this->runCommandInProject("php artisan migrate --no-interaction");
 
         // Determine team admin can create teams setting
         $teamAdminCanCreate = match($this->config['team_creation_permission'] ?? 'team_admin') {
