@@ -28,6 +28,11 @@ class UltimateInstaller
 
     private const TOTAL_PHASES = 10;
 
+    // Version info - update these when releasing new versions
+    public const VERSION = '1.0.0';
+    public const VERSION_DATE = '2026-01-17';
+    public const VERSION_NAME = 'Initial Release';
+
     public function __construct()
     {
         $this->ui = new TerminalUI();
@@ -51,6 +56,12 @@ class UltimateInstaller
             $this->cleanInstall = true; // Update implies clean
         }
 
+        // Show version if requested
+        if (in_array('--version', $argv ?? [], true) || in_array('-v', $argv ?? [], true)) {
+            $this->showVersion();
+            exit(0);
+        }
+
         // Show help if requested
         if (in_array('--help', $argv ?? [], true) || in_array('-h', $argv ?? [], true)) {
             $this->showHelp();
@@ -59,22 +70,38 @@ class UltimateInstaller
     }
 
     /**
+     * Show version information
+     */
+    private function showVersion(): void
+    {
+        echo "\n";
+        echo "Laravel TALL Stack AI-Powered Ultimate Installer\n";
+        echo "Version: " . self::VERSION . " (" . self::VERSION_NAME . ")\n";
+        echo "Released: " . self::VERSION_DATE . "\n";
+        echo "\n";
+        echo "GitHub: https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered\n";
+        echo "\n";
+    }
+
+    /**
      * Show help message
      */
     private function showHelp(): void
     {
         echo "\n";
-        echo "Laravel TALL Stack AI-Powered Ultimate Installer\n";
-        echo "================================================\n\n";
+        echo "Laravel TALL Stack AI-Powered Ultimate Installer v" . self::VERSION . "\n";
+        echo "=================================================\n\n";
         echo "Usage: php setup/UltimateInstaller.php [options]\n\n";
         echo "Options:\n";
-        echo "  --clean    Backup existing project and reinstall fresh\n";
-        echo "  --update   Pull latest from git and reinstall (implies --clean)\n";
-        echo "  --help     Show this help message\n\n";
+        echo "  --clean      Backup existing project and reinstall fresh\n";
+        echo "  --update     Pull latest from git and reinstall (implies --clean)\n";
+        echo "  --version    Show version information\n";
+        echo "  --help       Show this help message\n\n";
         echo "Examples:\n";
         echo "  php setup/UltimateInstaller.php\n";
         echo "  php setup/UltimateInstaller.php --clean\n";
-        echo "  php setup/UltimateInstaller.php --update\n\n";
+        echo "  php setup/UltimateInstaller.php --update\n";
+        echo "  php setup/UltimateInstaller.php --version\n\n";
     }
 
     /**
@@ -91,7 +118,7 @@ class UltimateInstaller
 
         // If --update flag was passed, pull latest changes
         if ($this->updateFirst) {
-            $this->ui->info("Updating installer from git...");
+            $this->ui->info("Updating installer from v" . self::VERSION . "...");
             echo "\n";
 
             // Fetch latest from remote
@@ -106,7 +133,10 @@ class UltimateInstaller
             exec("cd " . escapeshellarg($installerDir) . " && git pull origin main 2>&1", $pullOutput, $pullCode);
 
             if ($pullCode === 0) {
-                $this->ui->success("Installer updated to latest version!");
+                // Check new version from VERSION file
+                $newVersion = $this->getRemoteVersion($installerDir);
+                $versionMsg = $newVersion ? "Updated to v{$newVersion}!" : "Installer updated!";
+                $this->ui->success($versionMsg);
                 echo "  " . implode("\n  ", array_slice($pullOutput, -3)) . "\n\n";
 
                 // Re-execute the installer with same args (minus --update to prevent loop)
@@ -123,7 +153,7 @@ class UltimateInstaller
         }
 
         // Check if there are updates available (quick check without --update flag)
-        exec("cd " . escapeshellarg($installerDir) . " && git fetch origin --dry-run 2>&1", $output, $returnCode);
+        exec("cd " . escapeshellarg($installerDir) . " && git fetch origin 2>&1", $output, $returnCode);
 
         if ($returnCode === 0) {
             // Check if local is behind remote
@@ -131,10 +161,16 @@ class UltimateInstaller
 
             if ($behindCode === 0 && isset($behindOutput[0]) && (int)$behindOutput[0] > 0) {
                 $count = (int)$behindOutput[0];
+                $remoteVersion = $this->getRemoteVersion($installerDir);
+
                 echo "\n";
-                $this->ui->warning("A newer version of the installer is available! ({$count} commits behind)");
-                echo "  Run with --update flag to get the latest version:\n";
-                echo "  php setup/UltimateInstaller.php --update\n\n";
+                $this->ui->warning("A newer version is available!");
+                echo "  Current: v" . self::VERSION . "\n";
+                if ($remoteVersion && $remoteVersion !== self::VERSION) {
+                    echo "  Latest:  v{$remoteVersion}\n";
+                }
+                echo "  ({$count} commits behind)\n\n";
+                echo "  Run: php setup/UltimateInstaller.php --update\n\n";
 
                 if ($this->ui->confirm("Would you like to update now?", true)) {
                     $this->updateFirst = true;
@@ -143,6 +179,27 @@ class UltimateInstaller
                 }
             }
         }
+    }
+
+    /**
+     * Get version from remote VERSION file
+     */
+    private function getRemoteVersion(string $installerDir): ?string
+    {
+        // Try to get VERSION file from origin/main
+        exec("cd " . escapeshellarg($installerDir) . " && git show origin/main:VERSION 2>/dev/null", $versionOutput, $versionCode);
+
+        if ($versionCode === 0 && !empty($versionOutput[0])) {
+            return trim($versionOutput[0]);
+        }
+
+        // Fallback: check local VERSION file after pull
+        $versionFile = "{$installerDir}/VERSION";
+        if (file_exists($versionFile)) {
+            return trim(file_get_contents($versionFile));
+        }
+
+        return null;
     }
 
     /**

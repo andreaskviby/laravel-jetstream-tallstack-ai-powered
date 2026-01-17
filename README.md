@@ -285,9 +285,15 @@ php setup/UltimateInstaller.php --help
 |------|-------------|
 | `--clean` | Backup existing project and reinstall fresh |
 | `--update` | Pull latest from git, then clean reinstall |
+| `--version` | Show version information |
 | `--help` | Show help message |
 
 The installer automatically checks for updates on startup and prompts you if a newer version is available.
+
+**Version Management:**
+- Version is defined in `setup/UltimateInstaller.php` (VERSION, VERSION_DATE, VERSION_NAME constants)
+- A `VERSION` file in the root tracks the current version number
+- When checking for updates, the installer compares local vs remote versions
 
 ### Option 2: Curl Install (Fresh Laravel)
 
