@@ -1,0 +1,274 @@
+# AI Landing Page Generator Feature
+
+## Overview
+
+The AI Landing Page Generator is a powerful feature that uses AI (Claude) to automatically create beautiful, conversion-optimized landing pages for your SaaS ideas. Simply describe your product, and the AI researcher agent will generate a complete landing page with all the essential sections.
+
+## Features
+
+- 🤖 **AI-Powered Generation**: Uses Claude AI to create professional landing pages
+- 📝 **Simple Input**: Just describe your SaaS idea and let AI do the work
+- 🎨 **Modern Design**: Generates pages with Tailwind CSS styling
+- 📱 **Responsive**: All generated pages are mobile-friendly
+- 💾 **Save & View**: Store generated pages and view them anytime
+- 🔄 **Retry Failed Tasks**: Automatically retry if generation fails
+- 👥 **Team Support**: Works with Jetstream teams
+
+## How It Works
+
+1. **Create a Task**: Click "New Task" and describe your SaaS idea
+2. **AI Processing**: The researcher agent analyzes your description
+3. **Generation**: AI creates a complete landing page with:
+   - Hero section with compelling headlines
+   - Key features section
+   - Benefits and value proposition
+   - Social proof placeholders
+   - Pricing tiers
+   - Call-to-action sections
+   - Professional footer
+4. **View Result**: Once complete, view and copy the generated HTML
+
+## Installation
+
+This feature is installed automatically when you set up the Laravel Jetstream TALL Stack starter kit with the todo/researcher agent feature enabled.
+
+### Manual Installation
+
+If you need to install this feature manually:
+
+1. **Run Migration**:
+   ```bash
+   php artisan migrate
+   ```
+
+2. **Verify Configuration**:
+   Ensure your `.env` file has the Claude API key:
+   ```env
+   CLAUDE_API_KEY=your-api-key-here
+   CLAUDE_MODEL=claude-3-5-sonnet-20241022
+   ```
+
+3. **Access the Feature**:
+   Navigate to `/todos` or click "AI Landing Pages" in the navigation menu
+
+## Usage Guide
+
+### Creating a Landing Page
+
+1. Log in to your application
+2. Click "AI Landing Pages" in the navigation menu
+3. Click the "New Task" button
+4. Fill in the form:
+   - **Task Type**: Select "Landing Page Generator"
+   - **Title**: Give your task a descriptive name
+   - **Description**: Describe your SaaS idea in detail. Include:
+     - Product name and tagline
+     - Target audience
+     - Key features (3-6 main features)
+     - Unique value proposition
+     - Pricing approach
+     - Any specific design preferences
+
+5. Click "Create & Generate"
+6. Wait for processing (typically 10-30 seconds)
+7. View the result by clicking "View Result"
+
+### Example Description
+
+```
+Product Name: TaskFlow Pro
+
+TaskFlow Pro is a project management tool for remote teams that combines 
+task tracking, time management, and team collaboration in one beautiful 
+interface.
+
+Target Audience: Small to medium-sized remote teams (5-50 people) in 
+tech companies.
+
+Key Features:
+- Real-time task collaboration with live updates
+- Built-in time tracking and reporting
+- Integrations with Slack, GitHub, and Jira
+- Beautiful Kanban and List views
+- Smart AI-powered task prioritization
+- Mobile apps for iOS and Android
+
+Value Proposition: Save 10+ hours per week on project management overhead 
+while keeping your team aligned and productive.
+
+Pricing: Starter ($29/month), Professional ($79/month), Enterprise (custom)
+```
+
+### Viewing Results
+
+Once your task is completed:
+1. Click the "View Result" button
+2. Preview the generated landing page
+3. Click "Copy HTML" to copy the code
+4. Paste it into your project or save it for later use
+
+### Managing Tasks
+
+- **Retry**: If a task fails, click "Retry" to generate again
+- **Delete**: Remove tasks you no longer need
+- **Status Indicators**:
+  - 🟢 Green: Completed successfully
+  - 🔵 Blue: Currently processing
+  - 🔴 Red: Failed (can retry)
+  - ⚪ Gray: Pending
+
+## Configuration
+
+### Claude AI Settings
+
+Configure in `config/services.php`:
+```php
+'claude' => [
+    'api_key' => env('CLAUDE_API_KEY'),
+    'model' => env('CLAUDE_MODEL', 'claude-3-5-sonnet-20241022'),
+],
+```
+
+### Environment Variables
+
+Add to your `.env` file:
+```env
+CLAUDE_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxx
+CLAUDE_MODEL=claude-3-5-sonnet-20241022
+```
+
+Get your API key from: https://console.anthropic.com/
+
+## Technical Details
+
+### Database Schema
+
+The `todos` table stores all tasks:
+- `id`: Primary key
+- `user_id`: Owner of the task
+- `team_id`: Team context (nullable)
+- `title`: Task title
+- `description`: User's SaaS idea description
+- `type`: Task type (landing_page, research)
+- `status`: Current status (pending, processing, completed, failed)
+- `result`: Generated HTML or research results
+- `metadata`: Additional data (tokens used, errors, etc.)
+- `created_at`, `updated_at`: Timestamps
+
+### API Integration
+
+The feature uses Anthropic's Claude API:
+- Endpoint: `https://api.anthropic.com/v1/messages`
+- Model: Claude 3.5 Sonnet (configurable)
+- Max tokens: 4096 for landing pages
+- Timeout: 60 seconds
+
+### Components
+
+- **Model**: `App\Models\Todo`
+- **Service**: `App\Services\ResearcherAgentService`
+- **Livewire**: `App\Http\Livewire\TodoManager`
+- **View**: `resources/views/livewire/todo-manager.blade.php`
+
+## Best Practices
+
+1. **Detailed Descriptions**: Provide comprehensive details for better results
+2. **Specific Features**: List 3-6 concrete features
+3. **Target Audience**: Clearly define who the product is for
+4. **Value Proposition**: Explain the unique benefit
+5. **Review Output**: Always review and customize generated content
+6. **Save Favorites**: Keep successful generations for reference
+
+## Troubleshooting
+
+### "Claude API key not configured" Error
+
+**Solution**: Add your API key to `.env`:
+```env
+CLAUDE_API_KEY=your-api-key-here
+```
+
+### Task Stays in "Processing" Status
+
+**Possible Causes**:
+- API timeout
+- Invalid API key
+- Network issues
+
+**Solution**: Click "Retry" or check your API key and internet connection
+
+### Generated Page Doesn't Look Right
+
+**Solution**: Try providing more specific details in your description, or regenerate the task
+
+### Can't See the Menu Item
+
+**Solution**: Ensure you're logged in and the navigation menu has been updated
+
+## Advanced Usage
+
+### Customizing the Prompt
+
+Edit `app/Services/ResearcherAgentService.php` to modify the AI prompt:
+```php
+private function buildLandingPagePrompt(string $description): string
+{
+    // Customize the prompt here
+}
+```
+
+### Adding New Task Types
+
+1. Update the `type` enum in the migration
+2. Add handling in `ResearcherAgentService`
+3. Update the Livewire component validation
+4. Add UI options in the form
+
+### Extending Metadata
+
+Store additional information in the `metadata` JSON column:
+```php
+$todo->update([
+    'metadata' => [
+        'model' => 'claude-3-5-sonnet-20241022',
+        'tokens_used' => 2048,
+        'custom_field' => 'value',
+    ],
+]);
+```
+
+## Security Considerations
+
+- API keys are stored in environment variables (never in code)
+- User authorization checks on all todo operations
+- Team isolation (users only see their team's todos)
+- Input validation on all user inputs
+- CSRF protection on all forms
+- SQL injection prevention through Eloquent ORM
+
+## Performance
+
+- Async processing recommended for production (use queues)
+- Cache frequently accessed todos
+- Implement rate limiting for API calls
+- Consider pagination for large todo lists
+
+## Future Enhancements
+
+- Queue-based background processing
+- Email notifications on completion
+- Export to various formats (PDF, HTML file)
+- Template library for common SaaS types
+- A/B testing variations
+- SEO optimization suggestions
+- Analytics integration
+
+## Support
+
+For issues or questions:
+- GitHub Issues: [Create an issue](https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/issues)
+- Documentation: See README.md
+
+## License
+
+This feature is part of the Laravel Jetstream TALL Stack AI-Powered starter kit and is licensed under the MIT License.
