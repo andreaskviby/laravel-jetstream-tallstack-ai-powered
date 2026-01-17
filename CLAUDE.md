@@ -4,13 +4,13 @@
 This is the ultimate starter kit for TALL stack developers, providing a comprehensive foundation for building SaaS applications with AI-powered features and Claude Code integration.
 
 ## Key Features
-- Laravel 11+ with Jetstream and Livewire
-- TALL Stack (Tailwind, Alpine.js, Livewire, Laravel)
+- Laravel 12 with Jetstream 5 and Livewire 4
+- TALL Stack (Tailwind 4, Alpine.js 3.15, Livewire 4, Laravel 12)
 - Claude Code-first development workflow
 - OTP (passwordless) authentication
 - Team management with branding
 - Spatie roles and permissions integrated with Jetstream
-- Filament 4 admin panel with ARR/MRR dashboard widgets
+- Filament 5 admin panel with ARR/MRR dashboard widgets
 - Infrastructure automation (CloudFlare, Mailgun, Laravel Forge)
 - Legal pages with cookie consent banner
 

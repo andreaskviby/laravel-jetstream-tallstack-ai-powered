@@ -1036,7 +1036,7 @@ class UltimateInstaller
             return;
         }
 
-        $this->runCommandInProject("composer require filament/filament:\"^3.0\" --no-interaction");
+        $this->runCommandInProject("composer require filament/filament:\"^5.0\" --no-interaction");
         $this->runCommandInProject("php artisan filament:install --panels --no-interaction");
     }
 

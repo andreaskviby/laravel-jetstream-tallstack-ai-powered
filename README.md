@@ -1,9 +1,11 @@
 # Laravel TALL Stack AI-Powered Starter Kit
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Laravel-11+-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 11+">
-  <img src="https://img.shields.io/badge/Livewire-3.0-FB70A9?style=for-the-badge&logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/Tailwind-3.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 12">
+  <img src="https://img.shields.io/badge/Livewire-4.0-FB70A9?style=for-the-badge&logo=livewire&logoColor=white" alt="Livewire 4">
+  <img src="https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS 4">
+  <img src="https://img.shields.io/badge/Alpine.js-3.15-8BC0D0?style=for-the-badge&logo=alpine.js&logoColor=white" alt="Alpine.js 3.15">
+  <img src="https://img.shields.io/badge/Filament-5.0-FDAE4B?style=for-the-badge&logo=laravel&logoColor=white" alt="Filament 5">
   <img src="https://img.shields.io/badge/Claude_Code-Powered-7C3AED?style=for-the-badge&logo=anthropic&logoColor=white" alt="Claude Code">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License">
 </p>
@@ -20,7 +22,7 @@
 |---------------------|----------------------|
 | Days setting up auth, teams, payments | **Ready in minutes** |
 | Manual coding for every feature | **AI builds features for you** |
-| Separate admin panel setup | **Filament 4 pre-configured** |
+| Separate admin panel setup | **Filament 5 pre-configured** |
 | Complex role management | **Spatie + Jetstream integrated** |
 | No deployment automation | **One-command deploy to Forge** |
 
@@ -57,7 +59,7 @@ Beautiful terminal UI with progress bars, ASCII art, and guided setup for:
 - Database (MySQL/PostgreSQL/SQLite)
 - Authentication (OTP/Social/Password)
 - Payments (Stripe/Lemon Squeezy/PayPal)
-- Admin Panel (Filament 4)
+- Admin Panel (Filament 5)
 - Infrastructure (CloudFlare/Mailgun/Forge)
 
 ### 🔐 Passwordless by Default
@@ -81,11 +83,11 @@ Multi-tenant from day one with:
 ### Core Stack
 | Feature | Description |
 |---------|-------------|
-| Laravel 11+ | Latest stable Laravel framework |
-| Jetstream | Authentication scaffolding with teams |
-| Livewire 3 | Full-stack components |
-| Tailwind CSS | Utility-first styling |
-| Alpine.js | Lightweight JavaScript |
+| Laravel 12 | Latest Laravel framework (Feb 2025) |
+| Jetstream 5 | Authentication scaffolding with teams |
+| Livewire 4 | Full-stack components with islands & single-file |
+| Tailwind CSS 4 | Next-gen utility-first styling (5x faster) |
+| Alpine.js 3.15 | Lightweight reactive JavaScript |
 
 ### Authentication & Security
 | Feature | Description |
@@ -99,7 +101,7 @@ Multi-tenant from day one with:
 ### Admin & Management
 | Feature | Description |
 |---------|-------------|
-| Filament 4 Admin | Beautiful admin panel |
+| Filament 5 Admin | Beautiful admin panel with Livewire 4 |
 | User Management | CRUD for users |
 | Team Management | CRUD for teams |
 | Role Management | Spatie permissions UI |
