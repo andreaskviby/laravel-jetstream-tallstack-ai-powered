@@ -402,4 +402,4 @@ public function test_otp_expires_after_configured_time(): void
 **Related Skills:**
 - [Team Management Skills](team-management-skills.md)
 - [Security Best Practices](security-best-practices.md)
-- [Email Configuration Skills](email-configuration-skills.md)
+- [AI Integration Skills](ai-integration-skills.md)

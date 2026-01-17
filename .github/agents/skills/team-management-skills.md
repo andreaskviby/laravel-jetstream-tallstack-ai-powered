@@ -553,4 +553,4 @@ protected function hasRole(User $user, Team $team, string $role): bool
 **Related Skills:**
 - [OTP Authentication Skills](otp-authentication-skills.md)
 - [Security Best Practices](security-best-practices.md)
-- [Email Configuration Skills](email-configuration-skills.md)
+- [AI Integration Skills](ai-integration-skills.md)
