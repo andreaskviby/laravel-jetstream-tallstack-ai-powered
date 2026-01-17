@@ -27,6 +27,7 @@ A comprehensive starter kit for quickly bootstrapping Laravel projects with Jets
 - Automatic database setup (MySQL or SQLite)
 - Laravel Herd mail configuration support
 - Quick curl or composer installation
+- Built-in terminal aliases for Git, Artisan, Composer, and NPM commands
 
 ## Installation
 
@@ -83,6 +84,60 @@ php artisan serve
 ```
 
 Visit `http://localhost:8000` to see your application.
+
+## Terminal Aliases
+
+The starter kit includes convenient terminal aliases for common Git, PHP Artisan, Composer, and NPM commands.
+
+### Loading Aliases
+
+**For the current session only:**
+```bash
+source aliases.sh
+```
+
+**To load automatically (add to your shell configuration):**
+```bash
+# For Zsh (macOS default)
+echo "source $(pwd)/aliases.sh" >> ~/.zshrc
+source ~/.zshrc
+
+# For Bash
+echo "source $(pwd)/aliases.sh" >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Viewing Available Aliases
+
+List all available aliases with descriptions:
+```bash
+php artisan aliases:list
+# or use the shorthand (after loading aliases)
+palist-aliases
+```
+
+### Example Aliases
+
+**Git shortcuts:**
+- `gs` → `git status`
+- `ga` → `git add`
+- `gcm` → `git commit -m`
+- `gp` → `git push`
+
+**PHP Artisan shortcuts:**
+- `pa` → `php artisan`
+- `pam` → `php artisan migrate`
+- `pams` → `php artisan migrate:fresh --seed`
+- `pas` → `php artisan serve`
+- `pat` → `php artisan test`
+
+**Composer shortcuts:**
+- `c` → `composer`
+- `ci` → `composer install`
+- `cu` → `composer update`
+- `cr` → `composer require`
+
+See the full list by running `php artisan aliases:list`.
 
 ## Configuration
 

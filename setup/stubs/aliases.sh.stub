@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# Laravel Jetstream TALL Stack - Project Aliases
+# This file contains helpful aliases for common commands
+# Usage: source aliases.sh
+
+# Colors for output
+alias_success() {
+    echo -e "\033[0;32m✓\033[0m $1"
+}
+
+alias_info() {
+    echo -e "\033[0;34mℹ\033[0m $1"
+}
+
+# Git aliases
+alias gs='git status'
+alias ga='git add'
+alias gaa='git add --all'
+alias gc='git commit'
+alias gcm='git commit -m'
+alias gp='git push'
+alias gpl='git pull'
+alias gco='git checkout'
+alias gb='git branch'
+alias gd='git diff'
+alias gl='git log --oneline --graph --decorate'
+alias gll='git log --graph --pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset" --abbrev-commit'
+
+# PHP Artisan aliases
+alias pa='php artisan'
+alias pam='php artisan migrate'
+alias pamf='php artisan migrate:fresh'
+alias pams='php artisan migrate:fresh --seed'
+alias par='php artisan migrate:rollback'
+alias pads='php artisan db:seed'
+alias pac='php artisan cache:clear'
+alias pacc='php artisan config:clear'
+alias parc='php artisan route:clear'
+alias pavc='php artisan view:clear'
+alias pao='php artisan optimize'
+alias paoc='php artisan optimize:clear'
+alias pat='php artisan test'
+alias paqw='php artisan queue:work'
+alias paql='php artisan queue:listen'
+alias paqr='php artisan queue:restart'
+alias pas='php artisan serve'
+alias palist='php artisan list'
+alias pamm='php artisan make:model'
+alias pamc='php artisan make:controller'
+alias pamig='php artisan make:migration'
+alias pase='php artisan make:seeder'
+alias pafa='php artisan make:factory'
+alias papol='php artisan make:policy'
+alias pacom='php artisan make:command'
+alias paevent='php artisan make:event'
+alias palist-aliases='php artisan aliases:list'
+
+# Composer aliases
+alias c='composer'
+alias ci='composer install'
+alias cu='composer update'
+alias cr='composer require'
+alias crd='composer require --dev'
+alias crm='composer remove'
+alias cdu='composer dump-autoload'
+alias cdo='composer dump-autoload -o'
+
+# NPM aliases
+alias ni='npm install'
+alias nid='npm install --save-dev'
+alias nu='npm update'
+alias nr='npm run'
+alias nrd='npm run dev'
+alias nrb='npm run build'
+alias nrw='npm run watch'
+alias nrt='npm run test'
+
+# Laravel testing aliases
+alias test='php artisan test'
+alias testf='php artisan test --filter'
+alias pest='./vendor/bin/pest'
+alias pestf='./vendor/bin/pest --filter'
+
+# Laravel Pint (code style)
+alias pint='./vendor/bin/pint'
+alias pintd='./vendor/bin/pint --dirty'
+
+# Docker aliases (if using Laravel Sail)
+alias sail='./vendor/bin/sail'
+alias sailup='./vendor/bin/sail up -d'
+alias saildown='./vendor/bin/sail down'
+alias sailr='./vendor/bin/sail restart'
+
+# Utility aliases
+alias art='php artisan'
+alias serve='php artisan serve'
+alias fresh='php artisan migrate:fresh --seed'
+alias tinker='php artisan tinker'
+
+# Show success message
+alias_success "Project aliases loaded successfully!"
+alias_info "Type 'php artisan aliases:list' or 'palist-aliases' to see all available aliases"

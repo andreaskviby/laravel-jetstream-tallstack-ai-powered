@@ -80,13 +80,43 @@ Open your browser and go to:
 http://localhost:8000
 ```
 
-### 5. Register Your First User
+### 5. Load Terminal Aliases (Optional but Recommended)
+
+The starter kit includes convenient shortcuts for common commands:
+
+```bash
+# Load aliases in the current session
+source aliases.sh
+
+# View all available aliases
+php artisan aliases:list
+```
+
+**To make aliases permanent:**
+```bash
+# For Zsh (macOS default)
+echo "source $(pwd)/aliases.sh" >> ~/.zshrc
+
+# For Bash
+echo "source $(pwd)/aliases.sh" >> ~/.bashrc
+```
+
+**Example aliases:**
+- `gs` → `git status`
+- `pa` → `php artisan`
+- `pam` → `php artisan migrate`
+- `pas` → `php artisan serve`
+- `ci` → `composer install`
+
+See the complete list with `php artisan aliases:list` or `palist-aliases` (after loading).
+
+### 6. Register Your First User
 
 1. Click "Register" 
 2. Fill in your details
 3. For local development, use OTP code: **123456**
 
-### 6. Explore Features
+### 7. Explore Features
 
 Once logged in, you can:
 - ✅ Create and manage teams
@@ -155,6 +185,34 @@ npm run build
 ```
 
 ## Common Tasks
+
+### Use Terminal Aliases
+After loading aliases with `source aliases.sh`, you can use shortcuts:
+
+```bash
+# Migration shortcuts
+pam              # php artisan migrate
+pamf             # php artisan migrate:fresh
+pams             # php artisan migrate:fresh --seed
+
+# Development shortcuts
+pas              # php artisan serve
+pat              # php artisan test
+tinker           # php artisan tinker
+
+# Composer shortcuts
+ci               # composer install
+cu               # composer update
+cr package-name  # composer require package-name
+
+# Git shortcuts
+gs               # git status
+ga file          # git add file
+gcm "message"    # git commit -m "message"
+gp               # git push
+```
+
+Run `palist-aliases` or `php artisan aliases:list` to see all available aliases.
 
 ### Create a New Team
 1. Click your profile picture (top right)

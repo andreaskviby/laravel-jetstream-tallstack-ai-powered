@@ -51,6 +51,9 @@ class Installer
         // Generate application key
         $this->generateAppKey();
         
+        // Setup project aliases
+        $this->setupProjectAliases();
+        
         // Display summary
         $this->displaySummary();
     }
@@ -344,6 +347,72 @@ class Installer
         $this->printSuccess("Application key generated");
     }
 
+    private function setupProjectAliases()
+    {
+        $this->printHeader("Setting up Project Aliases");
+        
+        $this->printInfo("Installing terminal aliases for convenient command shortcuts...");
+        
+        // Get the stub directory (relative to where this installer is run from)
+        $stubsDir = __DIR__ . '/stubs';
+        
+        // If stubs directory doesn't exist, try downloading from GitHub
+        if (!is_dir($stubsDir)) {
+            $this->printWarning("Stubs directory not found locally. Attempting to download from GitHub...");
+            
+            // Download aliases.sh stub
+            $aliasesStubUrl = 'https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/main/setup/stubs/aliases.sh.stub';
+            $aliasesStubContent = @file_get_contents($aliasesStubUrl);
+            
+            if ($aliasesStubContent === false) {
+                $this->printWarning("Could not download aliases stub. Skipping aliases setup.");
+                return;
+            }
+            
+            // Download command stub
+            $commandStubUrl = 'https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/main/setup/stubs/AliasesListCommand.stub';
+            $commandStubContent = @file_get_contents($commandStubUrl);
+            
+            if ($commandStubContent === false) {
+                $this->printWarning("Could not download command stub. Skipping aliases setup.");
+                return;
+            }
+        } else {
+            // Read from local stubs
+            $aliasesStubPath = $stubsDir . '/aliases.sh.stub';
+            $commandStubPath = $stubsDir . '/AliasesListCommand.stub';
+            
+            if (!file_exists($aliasesStubPath) || !file_exists($commandStubPath)) {
+                $this->printWarning("Aliases stubs not found. Skipping aliases setup.");
+                return;
+            }
+            
+            $aliasesStubContent = file_get_contents($aliasesStubPath);
+            $commandStubContent = file_get_contents($commandStubPath);
+        }
+        
+        // Copy aliases.sh to project root
+        $aliasesPath = base_path('aliases.sh');
+        file_put_contents($aliasesPath, $aliasesStubContent);
+        chmod($aliasesPath, 0755);
+        $this->printSuccess("Created aliases.sh in project root");
+        
+        // Create Console/Commands directory if it doesn't exist
+        $commandsDir = app_path('Console/Commands');
+        if (!is_dir($commandsDir)) {
+            mkdir($commandsDir, 0755, true);
+        }
+        
+        // Copy AliasesListCommand
+        $commandPath = $commandsDir . '/AliasesListCommand.php';
+        file_put_contents($commandPath, $commandStubContent);
+        $this->printSuccess("Created AliasesListCommand.php");
+        
+        $this->config['aliases_installed'] = true;
+        $this->printSuccess("Project aliases installed successfully!");
+        $this->printInfo("Run 'php artisan aliases:list' to see all available aliases");
+    }
+
     private function displaySummary()
     {
         $this->printHeader("Installation Summary");
@@ -361,6 +430,10 @@ class Installer
         
         if ($this->config['claude_ai'] ?? false) {
             echo $this->colorize("✓ Claude AI configured\n", 'green');
+        }
+        
+        if ($this->config['aliases_installed'] ?? false) {
+            echo $this->colorize("✓ Project aliases installed\n", 'green');
         }
         
         echo "\n";
@@ -382,6 +455,14 @@ class Installer
             echo "4. For OTP authentication implementation, check:\n";
             echo $this->colorize("   - app/Actions/Fortify/*\n", 'cyan');
             echo $this->colorize("   - resources/views/auth/*\n", 'cyan');
+            echo "\n";
+        }
+        
+        if ($this->config['aliases_installed'] ?? false) {
+            $nextStep = ($this->config['otp_enabled'] ?? false) ? "5" : "4";
+            echo "{$nextStep}. Load project aliases for convenient shortcuts:\n";
+            echo $this->colorize("   source aliases.sh\n", 'cyan');
+            echo $this->colorize("   php artisan aliases:list\n", 'cyan');
             echo "\n";
         }
         
