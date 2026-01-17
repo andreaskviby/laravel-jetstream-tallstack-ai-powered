@@ -28,17 +28,20 @@
 
 ---
 
-## 🚀 Quick Start (2 Commands)
+## 🚀 Quick Start (3 Commands)
 
 ```bash
-# 1. Create your project
-composer create-project andreaskviby/laravel-jetstream-tallstack-ai-powered my-saas
+# 1. Clone the starter kit
+git clone https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered.git my-saas
 
-# 2. Start building with AI
-cd my-saas && claude
+# 2. Run the installer
+cd my-saas && composer install && php setup/UltimateInstaller.php
+
+# 3. Start building with AI
+claude
 ```
 
-That's it. The beautiful installer guides you through everything, and Claude Code starts building your app.
+That's it. The beautiful 10-phase installer guides you through everything, and Claude Code starts building your app.
 
 ---
 
@@ -244,14 +247,23 @@ The legal compliance agent provides guidance for:
 
 ## 🛠️ Installation
 
-### Option 1: Composer (Recommended)
+### Option 1: Git Clone (Recommended)
 
 ```bash
-composer create-project andreaskviby/laravel-jetstream-tallstack-ai-powered my-project
+# Clone the repository
+git clone https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered.git my-project
 cd my-project
+
+# Install dependencies
+composer install
+
+# Run the interactive installer
+php setup/UltimateInstaller.php
 ```
 
-### Option 2: Curl Install
+### Option 2: Curl Install (Fresh Laravel)
+
+This creates a fresh Laravel project and adds Jetstream features:
 
 ```bash
 curl -s https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/main/install.sh | bash -s -- my-project
