@@ -270,11 +270,42 @@ class UltimateInstaller
 
         if ($claudeInstalled) {
             $this->ui->success("Claude Code CLI found: " . trim($claudeVersion));
-        } else {
-            $this->ui->error("Claude Code CLI not found!");
-            $this->ui->showInfoBox("HOW TO INSTALL CLAUDE CODE", [
+            $this->config['claude_code_installed'] = true;
+
+            echo "\n";
+            $this->ui->showInfoBox("🤖 CLAUDE CODE DETECTED", [
                 "",
-                "Install Claude Code CLI:",
+                "You have Claude Code CLI installed!",
+                "",
+                "You can use either:",
+                "• Claude Code CLI (uses your existing authentication)",
+                "• Direct API key (for background tasks)",
+                "",
+            ], 'accent');
+
+            $useCliAuth = $this->ui->confirm("Use Claude Code CLI for AI features? (Recommended)", true);
+
+            if ($useCliAuth) {
+                $this->config['use_claude_cli'] = true;
+                $this->ui->success("Will use Claude Code CLI for AI features");
+
+                // Optionally get API key for background tasks
+                echo "\n";
+                if ($this->ui->confirm("Also provide API key for background tasks? (Optional)", false)) {
+                    $this->promptForApiKey();
+                }
+            } else {
+                $this->config['use_claude_cli'] = false;
+                $this->promptForApiKey();
+            }
+        } else {
+            $this->ui->warning("Claude Code CLI not found");
+            $this->config['claude_code_installed'] = false;
+            $this->config['use_claude_cli'] = false;
+
+            $this->ui->showInfoBox("INSTALL CLAUDE CODE (OPTIONAL)", [
+                "",
+                "Install Claude Code CLI for the best experience:",
                 "",
                 "  npm install -g @anthropic-ai/claude-code",
                 "",
@@ -282,24 +313,26 @@ class UltimateInstaller
                 "",
             ], 'info');
 
-            if (!$this->ui->confirm("Continue anyway? (Some features will be disabled)", false)) {
-                $this->ui->info("Installation cancelled. Please install Claude Code first.");
-                exit(0);
-            }
-
-            $this->config['claude_code_installed'] = false;
+            echo "\n";
+            $this->promptForApiKey();
         }
 
-        $this->config['claude_code_installed'] = $claudeInstalled;
-
-        // Get Claude API Key
         echo "\n";
-        $this->ui->showInfoBox("🔑 ANTHROPIC API KEY REQUIRED", [
+        $this->ui->success("Claude Code verification complete!");
+        sleep(1);
+    }
+
+    /**
+     * Prompt for Anthropic API key
+     */
+    private function promptForApiKey(): void
+    {
+        $this->ui->showInfoBox("🔑 ANTHROPIC API KEY", [
             "",
-            "Your API key is required for:",
+            "Your API key enables:",
             "• AI-powered landing page generation",
-            "• Todo system with Claude Code integration",
-            "• AI development agents and skills",
+            "• Background AI processing",
+            "• Direct API calls for automation",
             "",
             "Get your API key at: https://console.anthropic.com/",
             "",
@@ -308,7 +341,11 @@ class UltimateInstaller
         $apiKey = $this->ui->promptPassword("Enter your Anthropic API key:");
 
         if (empty($apiKey)) {
-            $this->ui->error("API key is required to continue.");
+            if ($this->config['use_claude_cli'] ?? false) {
+                $this->ui->info("No API key provided - will use Claude Code CLI only");
+                return;
+            }
+            $this->ui->error("API key is required when Claude Code CLI is not available.");
             exit(1);
         }
 
@@ -322,10 +359,6 @@ class UltimateInstaller
 
         // Store in secure file (gitignored)
         $this->storeSecureConfig('anthropic_api_key', $apiKey);
-
-        echo "\n";
-        $this->ui->success("Claude Code verification complete!");
-        sleep(1);
     }
 
     /**
@@ -546,8 +579,10 @@ class UltimateInstaller
     private function startBackgroundLandingPageGeneration(): void
     {
         $apiKey = $this->config['anthropic_api_key'] ?? null;
+        $useClaudeCli = $this->config['use_claude_cli'] ?? false;
 
-        if (!$apiKey) {
+        // Need either API key or Claude CLI
+        if (!$apiKey && !$useClaudeCli) {
             return; // Will use default template
         }
 
@@ -558,6 +593,7 @@ class UltimateInstaller
         $configFile = sys_get_temp_dir() . '/landing_config_' . uniqid() . '.json';
         $configData = [
             'api_key' => $apiKey,
+            'use_claude_cli' => $useClaudeCli,
             'app_name' => $this->config['app_name'],
             'app_description' => $this->config['app_description'] ?? 'A modern SaaS application',
             'subscription_plans' => $this->config['subscription_plans'] ?? [],
@@ -582,7 +618,8 @@ class UltimateInstaller
         $command = escapeshellarg($phpBinary) . " " . escapeshellarg($scriptFile) . " > " . escapeshellarg($logFile) . " 2>&1 &";
         exec($command);
 
-        $this->ui->info("Landing page generation started in background...");
+        $method = $useClaudeCli ? "Claude Code CLI" : "API";
+        $this->ui->info("Landing page generation started in background (using {$method})...");
     }
 
     /**
@@ -610,7 +647,8 @@ if (!$config) {
 
 echo "Config loaded successfully\n";
 
-$apiKey = $config["api_key"];
+$apiKey = $config["api_key"] ?? null;
+$useClaudeCli = $config["use_claude_cli"] ?? false;
 $appName = $config["app_name"];
 $appDescription = $config["app_description"];
 $plans = $config["subscription_plans"];
@@ -619,6 +657,7 @@ $outputFile = $config["output_file"];
 
 echo "App name: $appName\n";
 echo "Output file: $outputFile\n";
+echo "Method: " . ($useClaudeCli ? "Claude Code CLI" : "API") . "\n";
 
 // Build plans text
 $plansText = "";
@@ -654,57 +693,97 @@ Requirements:
 
 Output ONLY the complete welcome.blade.php file content, starting with <!DOCTYPE html> and ending with </html>. No explanation or markdown code blocks.";
 
-echo "Calling Claude API...\n";
+// Use Claude Code CLI if available and preferred
+if ($useClaudeCli) {
+    echo "Using Claude Code CLI...\n";
 
-$data = [
-    "model" => "claude-sonnet-4-20250514",
-    "max_tokens" => 8192,
-    "messages" => [
-        ["role" => "user", "content" => $prompt]
-    ]
-];
+    // Write prompt to temp file to avoid shell escaping issues
+    $promptFile = sys_get_temp_dir() . "/landing_prompt_" . uniqid() . ".txt";
+    file_put_contents($promptFile, $prompt);
 
-$ch = curl_init("https://api.anthropic.com/v1/messages");
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode($data),
-    CURLOPT_HTTPHEADER => [
-        "Content-Type: application/json",
-        "x-api-key: " . $apiKey,
-        "anthropic-version: 2023-06-01"
-    ],
-    CURLOPT_TIMEOUT => 120
-]);
+    // Run claude with --print flag to get output directly
+    $command = "claude --print < " . escapeshellarg($promptFile) . " 2>&1";
+    echo "Command: $command\n";
 
-$response = curl_exec($ch);
-$curlError = curl_error($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+    $content = shell_exec($command);
+    @unlink($promptFile);
 
-echo "HTTP Code: $httpCode\n";
-
-if ($curlError) {
-    echo "CURL Error: $curlError\n";
-    exit(1);
-}
-
-if ($httpCode === 200) {
-    $result = json_decode($response, true);
-    if (isset($result["content"][0]["text"])) {
-        $content = $result["content"][0]["text"];
+    if ($content && strlen($content) > 100) {
+        // Clean up any markdown code blocks
         $content = preg_replace(\'/^```(?:blade|php|html)?\n/m\', "", $content);
         $content = preg_replace(\'/\n```$/m\', "", $content);
-        $written = file_put_contents($outputFile, trim($content));
-        echo "Written $written bytes to $outputFile\n";
-        echo "Landing page generated successfully!\n";
+        $content = trim($content);
+
+        // Validate it looks like HTML
+        if (strpos($content, "<!DOCTYPE html>") !== false || strpos($content, "<html") !== false) {
+            $written = file_put_contents($outputFile, $content);
+            echo "Written $written bytes to $outputFile\n";
+            echo "Landing page generated successfully using Claude Code CLI!\n";
+        } else {
+            echo "ERROR: Output does not look like valid HTML\n";
+            echo "First 500 chars: " . substr($content, 0, 500) . "\n";
+        }
     } else {
-        echo "ERROR: No content in response\n";
+        echo "ERROR: No output from Claude Code CLI\n";
+        echo "Output: " . ($content ?: "(empty)") . "\n";
+    }
+} elseif ($apiKey) {
+    // Use direct API call
+    echo "Calling Claude API...\n";
+
+    $data = [
+        "model" => "claude-sonnet-4-20250514",
+        "max_tokens" => 8192,
+        "messages" => [
+            ["role" => "user", "content" => $prompt]
+        ]
+    ];
+
+    $ch = curl_init("https://api.anthropic.com/v1/messages");
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($data),
+        CURLOPT_HTTPHEADER => [
+            "Content-Type: application/json",
+            "x-api-key: " . $apiKey,
+            "anthropic-version: 2023-06-01"
+        ],
+        CURLOPT_TIMEOUT => 120
+    ]);
+
+    $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    echo "HTTP Code: $httpCode\n";
+
+    if ($curlError) {
+        echo "CURL Error: $curlError\n";
+        exit(1);
+    }
+
+    if ($httpCode === 200) {
+        $result = json_decode($response, true);
+        if (isset($result["content"][0]["text"])) {
+            $content = $result["content"][0]["text"];
+            $content = preg_replace(\'/^```(?:blade|php|html)?\n/m\', "", $content);
+            $content = preg_replace(\'/\n```$/m\', "", $content);
+            $written = file_put_contents($outputFile, trim($content));
+            echo "Written $written bytes to $outputFile\n";
+            echo "Landing page generated successfully!\n";
+        } else {
+            echo "ERROR: No content in response\n";
+            echo "Response: " . substr($response, 0, 500) . "\n";
+        }
+    } else {
+        echo "ERROR: API returned HTTP $httpCode\n";
         echo "Response: " . substr($response, 0, 500) . "\n";
     }
 } else {
-    echo "ERROR: API returned HTTP $httpCode\n";
-    echo "Response: " . substr($response, 0, 500) . "\n";
+    echo "ERROR: No API key or Claude CLI available\n";
+    exit(1);
 }
 
 // Clean up config file
