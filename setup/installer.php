@@ -185,16 +185,17 @@ class Installer
                 return;
             }
             
-            // Try to create database using prepared statement
+            // Try to create database - database name already validated above
             try {
                 $dsn = sprintf("mysql:host=%s;port=%s;charset=utf8mb4", $host, $port);
                 $pdo = new PDO($dsn, $username, $password, [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
                 ]);
                 
-                // Use backticks and validated name for database creation
-                $stmt = $pdo->prepare("CREATE DATABASE IF NOT EXISTS `$database` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                $stmt->execute();
+                // Database name is validated with regex above, safe to use in query
+                // Note: Database names cannot be parameterized in PDO
+                $sql = "CREATE DATABASE IF NOT EXISTS `" . $database . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+                $pdo->exec($sql);
                 $this->printSuccess("Database '$database' created successfully");
             } catch (PDOException $e) {
                 $this->printError("Failed to create database: " . $e->getMessage());
@@ -414,12 +415,31 @@ class Installer
 
     private function runCommand($command)
     {
+        // Whitelist of allowed base commands
+        $allowedCommands = [
+            'composer',
+            'php artisan',
+            'npm',
+            'node'
+        ];
+        
+        // Check if command starts with an allowed command
+        $isAllowed = false;
+        foreach ($allowedCommands as $allowed) {
+            if (strpos($command, $allowed) === 0) {
+                $isAllowed = true;
+                break;
+            }
+        }
+        
+        if (!$isAllowed) {
+            $this->printError("Command not allowed: $command");
+            return false;
+        }
+        
         $output = [];
         $returnVar = 0;
-        
-        // Sanitize command to prevent injection
-        $safeCommand = escapeshellcmd($command);
-        exec($safeCommand . ' 2>&1', $output, $returnVar);
+        exec($command . ' 2>&1', $output, $returnVar);
         
         if ($returnVar !== 0) {
             $this->printWarning("Command may have had issues: $command");
