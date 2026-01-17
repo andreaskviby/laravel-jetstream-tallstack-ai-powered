@@ -21,6 +21,9 @@ class Team extends JetstreamTeam
     protected $fillable = [
         'name',
         'personal_team',
+        'logo_path',
+        'primary_color',
+        'secondary_color',
     ];
 
     /**
@@ -44,5 +47,17 @@ class Team extends JetstreamTeam
         return [
             'personal_team' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the URL to the team's logo.
+     *
+     * @return string
+     */
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->logo_path
+            ? asset('storage/' . $this->logo_path)
+            : null;
     }
 }

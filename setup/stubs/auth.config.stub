@@ -1,0 +1,24 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | OTP Authentication Settings
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure the OTP (One-Time Password) authentication
+    | settings for your application.
+    |
+    */
+
+    'otp' => [
+        'enabled' => env('OTP_ENABLED', true),
+        'length' => env('OTP_LENGTH', 6),
+        'expires_in' => env('OTP_EXPIRES_IN', 10), // minutes
+        'prefill_local' => env('OTP_PREFILL_LOCAL', false),
+        'default_code' => env('OTP_DEFAULT_CODE', '123456'),
+        'email_view' => env('OTP_EMAIL_VIEW', 'emails.otp'), // configurable email template
+    ],
+
+];

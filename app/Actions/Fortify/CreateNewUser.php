@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -35,13 +36,22 @@ class CreateNewUser implements CreatesNewUsers
                 'email' => $input['email'],
                 'password' => Hash::make($input['password']),
             ]), function (User $user) use ($input) {
-                $this->createTeam($user, $input['team_name']);
+                // Check if the user has pending team invitations
+                $invitations = Jetstream::teamInvitationModel()::where('email', $input['email'])->get();
+
+                if ($invitations->isNotEmpty()) {
+                    // If user has pending invitations, accept them and skip personal team creation
+                    $this->acceptPendingInvitations($user, $invitations);
+                } else {
+                    // Otherwise, create a team with the provided name
+                    $this->createTeam($user, $input['team_name']);
+                }
             });
         });
     }
 
     /**
-     * Create a team for the user.
+     * Create a team for the user with the provided name.
      */
     protected function createTeam(User $user, string $teamName): void
     {
@@ -50,5 +60,26 @@ class CreateNewUser implements CreatesNewUsers
             'name' => $teamName,
             'personal_team' => false,
         ]));
+    }
+
+    /**
+     * Accept all pending team invitations for the user.
+     */
+    protected function acceptPendingInvitations(User $user, Collection $invitations): void
+    {
+        foreach ($invitations as $invitation) {
+            // Add the user to the team
+            $invitation->team->users()->attach($user, ['role' => $invitation->role]);
+
+            // Delete the invitation
+            $invitation->delete();
+        }
+
+        // Set the user's current team to the first team they were invited to
+        if ($invitations->isNotEmpty()) {
+            $user->forceFill([
+                'current_team_id' => $invitations->first()->team_id,
+            ])->save();
+        }
     }
 }
