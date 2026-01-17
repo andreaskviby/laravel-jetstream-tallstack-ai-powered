@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Todo extends Model
 {
@@ -15,12 +16,14 @@ class Todo extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'user_id',
+        'team_id',
         'title',
         'description',
+        'type',
         'status',
-        'priority',
-        'context',
-        'completed_at',
+        'metadata',
+        'result',
     ];
 
     /**
@@ -29,51 +32,54 @@ class Todo extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'completed_at' => 'datetime',
+        'metadata' => 'array',
     ];
 
     /**
-     * Get all pending todos.
+     * Get the user that owns the todo.
      */
-    public function scopePending($query)
+    public function user(): BelongsTo
     {
-        return $query->where('status', 'pending');
+        return $this->belongsTo(User::class);
     }
 
     /**
-     * Get all in-progress todos.
+     * Get the team that owns the todo.
      */
-    public function scopeInProgress($query)
+    public function team(): BelongsTo
     {
-        return $query->where('status', 'in_progress');
+        return $this->belongsTo(Team::class);
     }
 
     /**
-     * Get all completed todos.
+     * Check if the todo is pending.
      */
-    public function scopeCompleted($query)
+    public function isPending(): bool
     {
-        return $query->where('status', 'completed');
+        return $this->status === 'pending';
     }
 
     /**
-     * Mark the todo as completed.
+     * Check if the todo is processing.
      */
-    public function markAsCompleted(): void
+    public function isProcessing(): bool
     {
-        $this->update([
-            'status' => 'completed',
-            'completed_at' => now(),
-        ]);
+        return $this->status === 'processing';
     }
 
     /**
-     * Mark the todo as in progress.
+     * Check if the todo is completed.
      */
-    public function markAsInProgress(): void
+    public function isCompleted(): bool
     {
-        $this->update([
-            'status' => 'in_progress',
-        ]);
+        return $this->status === 'completed';
+    }
+
+    /**
+     * Check if the todo has failed.
+     */
+    public function hasFailed(): bool
+    {
+        return $this->status === 'failed';
     }
 }

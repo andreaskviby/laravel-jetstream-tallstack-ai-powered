@@ -13,16 +13,15 @@ return new class extends Migration
     {
         Schema::create('todos', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
             $table->string('title');
-            $table->text('description')->nullable();
-            $table->enum('status', ['pending', 'in_progress', 'completed'])->default('pending');
-            $table->enum('priority', ['low', 'medium', 'high'])->default('medium');
-            $table->text('context')->nullable();
-            $table->timestamp('completed_at')->nullable();
+            $table->text('description');
+            $table->string('type')->default('landing_page'); // landing_page, research
+            $table->string('status')->default('pending'); // pending, processing, completed, failed
+            $table->json('metadata')->nullable(); // Store agent results, errors, etc.
+            $table->text('result')->nullable(); // Generated landing page HTML or result
             $table->timestamps();
-            
-            $table->index('status');
-            $table->index('priority');
         });
     }
 

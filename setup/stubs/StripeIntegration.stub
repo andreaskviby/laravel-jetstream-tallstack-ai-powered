@@ -1,0 +1,264 @@
+<?php
+
+/**
+ * Stripe Payment Integration
+ * 
+ * This stub provides a starting point for integrating Stripe payments
+ * using Laravel Cashier into your application.
+ * 
+ * Installation:
+ * 1. Run: composer require laravel/cashier
+ * 2. Add this trait to your User model
+ * 3. Run migrations: php artisan migrate
+ * 4. Configure .env with Stripe keys
+ */
+
+namespace App\Models;
+
+use Laravel\Cashier\Billable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+class User extends Authenticatable
+{
+    use Billable; // Add this trait to enable Cashier features
+
+    // ... rest of your User model
+}
+
+/**
+ * Environment Configuration (.env)
+ * 
+ * Add these to your .env file:
+ * 
+ * STRIPE_KEY=pk_test_your_publishable_key
+ * STRIPE_SECRET=sk_test_your_secret_key
+ * STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+ * CASHIER_CURRENCY=usd
+ */
+
+/**
+ * Example: Creating a Subscription
+ */
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class SubscriptionController extends Controller
+{
+    public function subscribe(Request $request)
+    {
+        $user = $request->user();
+        
+        // Create subscription
+        $user->newSubscription('default', 'price_monthly_plan_id')
+            ->create($request->paymentMethodId);
+            
+        return redirect()->route('dashboard')->with('success', 'Subscribed successfully!');
+    }
+    
+    public function cancel(Request $request)
+    {
+        $user = $request->user();
+        $user->subscription('default')->cancel();
+        
+        return redirect()->route('dashboard')->with('success', 'Subscription cancelled.');
+    }
+    
+    public function resume(Request $request)
+    {
+        $user = $request->user();
+        $user->subscription('default')->resume();
+        
+        return redirect()->route('dashboard')->with('success', 'Subscription resumed.');
+    }
+}
+
+/**
+ * Example: One-Time Payment
+ */
+class PaymentController extends Controller
+{
+    public function charge(Request $request)
+    {
+        $user = $request->user();
+        
+        // Charge one-time payment
+        $payment = $user->charge(1000, $request->paymentMethodId, [
+            'description' => 'One-time purchase',
+        ]);
+        
+        return redirect()->back()->with('success', 'Payment successful!');
+    }
+    
+    public function invoices(Request $request)
+    {
+        $user = $request->user();
+        
+        // Get all invoices
+        $invoices = $user->invoices();
+        
+        return view('billing.invoices', compact('invoices'));
+    }
+    
+    public function downloadInvoice(Request $request, $invoiceId)
+    {
+        return $request->user()->downloadInvoice($invoiceId, [
+            'vendor' => 'Your Company',
+            'product' => 'Your Product',
+        ]);
+    }
+}
+
+/**
+ * Routes (routes/web.php)
+ */
+// use App\Http\Controllers\SubscriptionController;
+// use App\Http\Controllers\PaymentController;
+
+// Route::middleware(['auth'])->group(function () {
+//     // Subscription routes
+//     Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])->name('subscribe');
+//     Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+//     Route::post('/subscription/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
+//     
+//     // Payment routes
+//     Route::post('/charge', [PaymentController::class, 'charge'])->name('charge');
+//     Route::get('/invoices', [PaymentController::class, 'invoices'])->name('invoices');
+//     Route::get('/invoice/{invoiceId}', [PaymentController::class, 'downloadInvoice'])->name('invoice.download');
+// });
+
+/**
+ * Migration: Add Cashier columns to users table
+ * 
+ * Run: php artisan make:migration add_cashier_columns_to_users_table
+ */
+// use Illuminate\Database\Migrations\Migration;
+// use Illuminate\Database\Schema\Blueprint;
+// use Illuminate\Support\Facades\Schema;
+//
+// return new class extends Migration
+// {
+//     public function up(): void
+//     {
+//         Schema::table('users', function (Blueprint $table) {
+//             $table->string('stripe_id')->nullable()->index();
+//             $table->string('pm_type')->nullable();
+//             $table->string('pm_last_four', 4)->nullable();
+//             $table->timestamp('trial_ends_at')->nullable();
+//         });
+//     }
+//
+//     public function down(): void
+//     {
+//         Schema::table('users', function (Blueprint $table) {
+//             $table->dropColumn(['stripe_id', 'pm_type', 'pm_last_four', 'trial_ends_at']);
+//         });
+//     }
+// };
+
+/**
+ * Blade View Example (resources/views/subscription/create.blade.php)
+ */
+?>
+{{-- <x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            Subscribe to Premium
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
+                <form id="payment-form" action="{{ route('subscribe') }}" method="POST">
+                    @csrf
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            Card Details
+                        </label>
+                        <div id="card-element" class="p-3 border rounded"></div>
+                        <div id="card-errors" class="text-red-500 text-sm mt-2"></div>
+                    </div>
+                    
+                    <button type="submit" 
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Subscribe ($9.99/month)
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('{{ env('STRIPE_KEY') }}');
+        const elements = stripe.elements();
+        const cardElement = elements.create('card');
+        cardElement.mount('#card-element');
+
+        const form = document.getElementById('payment-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const { paymentMethod, error } = await stripe.createPaymentMethod({
+                type: 'card',
+                card: cardElement,
+            });
+
+            if (error) {
+                document.getElementById('card-errors').textContent = error.message;
+            } else {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'paymentMethodId';
+                input.value = paymentMethod.id;
+                form.appendChild(input);
+                form.submit();
+            }
+        });
+    </script>
+    @endpush
+</x-app-layout> --}}
+
+<?php
+/**
+ * Checking Subscription Status
+ */
+// In your views or controllers:
+// @if (auth()->user()->subscribed('default'))
+//     // User is subscribed
+// @endif
+
+// @if (auth()->user()->onTrial('default'))
+//     // User is on trial
+// @endif
+
+// @if (auth()->user()->subscribedToPrice('price_monthly_plan_id', 'default'))
+//     // User is subscribed to specific price
+// @endif
+
+/**
+ * Webhooks
+ * 
+ * 1. Add to routes/web.php:
+ *    Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
+ * 
+ * 2. Add to VerifyCsrfToken middleware exception:
+ *    protected $except = ['/stripe/webhook'];
+ * 
+ * 3. Configure in Stripe Dashboard:
+ *    https://yourapp.com/stripe/webhook
+ */
+
+/**
+ * Testing
+ * 
+ * Use Stripe test cards:
+ * - Success: 4242 4242 4242 4242
+ * - Declined: 4000 0000 0000 0002
+ * - 3D Secure: 4000 0025 0000 3155
+ * 
+ * More: https://stripe.com/docs/testing
+ */
