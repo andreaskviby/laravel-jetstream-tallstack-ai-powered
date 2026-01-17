@@ -16,17 +16,36 @@ A comprehensive starter kit for quickly bootstrapping Laravel projects with Jets
 - Prefilled OTP codes for local development (123456)
 - Secure team invitation system
 - Built-in security best practices
+- Optional social login (Google, Facebook, GitHub) via Laravel Socialite
 
 🤖 **AI Integration**
 - Claude AI API integration ready
 - OAuth login support for Claude
 - Pre-configured for AI-powered features
 
+💳 **Payment Integration (Optional)**
+- Stripe integration via Laravel Cashier
+- Lemon Squeezy integration (official package)
+- PayPal integration support
+- Subscription and one-time payment examples
+
+🎨 **Admin Panel (Optional)**
+- Filament 4 integration support
+- Modern TALL-based admin panel
+- Easy setup with interactive installer
+
+📁 **Storage & File Management**
+- Split filesystem configuration (Local + S3/Cloud)
+- Flysystem integration examples
+- Support for multiple storage providers
+- Asset management best practices
+
 ⚡ **Developer Experience**
 - Interactive installation wizard
 - Automatic database setup (MySQL or SQLite)
 - Laravel Herd mail configuration support
 - Quick curl or composer installation
+- Comprehensive integration stubs for easy feature addition
 
 ## Installation
 
@@ -133,16 +152,25 @@ DB_PASSWORD=your_password
 
 ```
 ├── setup/
-│   ├── installer.php           # Main installation script
-│   └── stubs/                  # Template files
-│       ├── SendOTPCode.stub    # OTP sending action
-│       ├── VerifyOTPCode.stub  # OTP verification action
-│       ├── auth.config.stub    # Auth configuration
-│       ├── otp-email.stub      # OTP email template
-│       └── login.blade.stub    # OTP login view
-├── install.sh                  # Curl installer script
-├── composer.json              # Composer configuration
-└── README.md                  # This file
+│   ├── installer.php                    # Main installation script
+│   └── stubs/                           # Template files
+│       ├── SendOTPCode.stub             # OTP sending action
+│       ├── VerifyOTPCode.stub           # OTP verification action
+│       ├── auth.config.stub             # Auth configuration
+│       ├── otp-email.stub               # OTP email template
+│       ├── login.blade.stub             # OTP login view
+│       ├── InviteTeamMember.stub        # Team invitation action
+│       ├── team-invitation-email.stub   # Team invitation template
+│       ├── filament-install.stub        # Filament 4 setup helper
+│       ├── StripeIntegration.stub       # Stripe/Cashier integration
+│       ├── LemonSqueezyIntegration.stub # Lemon Squeezy integration
+│       ├── PayPalIntegration.stub       # PayPal integration
+│       ├── SocialiteIntegration.stub    # Social login setup
+│       └── FlysystemSplitStorage.stub   # Storage configuration
+├── install.sh                           # Curl installer script
+├── composer.json                        # Composer configuration
+├── FEATURES_COMPARISON.md               # Feature comparison guide
+└── README.md                            # This file
 ```
 
 ## Features in Detail
@@ -171,6 +199,57 @@ Full integration of the TALL stack:
 - **Alpine.js**: Minimal JavaScript framework
 - **Livewire**: Full-stack framework for Laravel
 - **Laravel**: The PHP framework for web artisans
+
+## Optional Features
+
+This starter kit provides integration stubs for popular features. See the `setup/stubs/` directory for implementation guides.
+
+### 🎨 Filament 4 Admin Panel
+
+Modern admin panel built with TALL stack:
+- Run the helper: `php setup/stubs/filament-install.stub`
+- Complete dashboard, tables, and forms
+- Resource management out of the box
+- Read the stub file for detailed instructions
+
+### 💳 Payment Integration
+
+Choose your payment provider:
+
+**Stripe (Laravel Cashier)**
+- Subscriptions and one-time payments
+- View: `setup/stubs/StripeIntegration.stub`
+- Official Laravel package with great documentation
+
+**Lemon Squeezy**
+- Merchant of Record (handles taxes/compliance)
+- View: `setup/stubs/LemonSqueezyIntegration.stub`
+- Perfect for SaaS products
+
+**PayPal**
+- Worldwide payment acceptance
+- View: `setup/stubs/PayPalIntegration.stub`
+- REST API integration examples
+
+### 🔐 Social Login
+
+Add OAuth authentication with Laravel Socialite:
+- Google, Facebook, GitHub, Twitter support
+- View: `setup/stubs/SocialiteIntegration.stub`
+- Complete setup guide with examples
+
+### 📁 Split Filesystem Storage
+
+Configure multiple storage options:
+- Local storage for avatars
+- S3/Spaces for product images
+- View: `setup/stubs/FlysystemSplitStorage.stub`
+- Best practices and cost optimization tips
+
+### 📚 Feature Comparison
+
+For a detailed comparison with other Laravel starter kits and features, see:
+- [FEATURES_COMPARISON.md](FEATURES_COMPARISON.md) - Complete feature matrix
 
 ## Requirements
 
