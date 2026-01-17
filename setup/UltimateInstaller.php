@@ -160,6 +160,9 @@ class UltimateInstaller
         $this->ui->clearScreen();
         $this->ui->showPhaseHeader(1, self::TOTAL_PHASES, "PROJECT CONFIGURATION", "📦");
 
+        // Detect local development environment (Herd/Valet)
+        $this->detectLocalDevEnvironment();
+
         // Get project name
         $projectName = $this->ui->prompt(
             "What would you like to name your project?",
@@ -180,6 +183,9 @@ class UltimateInstaller
         $this->ui->success("Project name: {$projectName}");
         $this->ui->info("App name: {$this->config['app_name']}");
 
+        // Configure APP_URL based on environment
+        $this->configureAppUrl($projectName);
+
         // Get project description
         $description = $this->ui->prompt(
             "Briefly describe your SaaS (for composer.json):",
@@ -188,8 +194,94 @@ class UltimateInstaller
 
         $this->config['description'] = $description;
 
-        $this->features[] = "Laravel 11 + Jetstream + Livewire";
+        $this->features[] = "Laravel 12 + Jetstream + Livewire";
         $this->features[] = "TALL Stack (Tailwind, Alpine, Livewire, Laravel)";
+    }
+
+    /**
+     * Detect if running in Laravel Herd or Valet environment
+     */
+    private function detectLocalDevEnvironment(): void
+    {
+        $this->config['local_env'] = null;
+        $this->config['local_env_path'] = null;
+
+        // Check for Laravel Herd
+        $herdVersion = @shell_exec('herd --version 2>/dev/null');
+        if (!empty($herdVersion)) {
+            $this->config['local_env'] = 'herd';
+            $this->ui->success("Laravel Herd detected: " . trim($herdVersion));
+
+            // Get Herd's parked paths
+            $herdPaths = @shell_exec('herd paths 2>/dev/null');
+            if (!empty($herdPaths)) {
+                $this->config['local_env_paths'] = array_filter(array_map('trim', explode("\n", $herdPaths)));
+            }
+
+            return;
+        }
+
+        // Check for Laravel Valet
+        $valetVersion = @shell_exec('valet --version 2>/dev/null');
+        if (!empty($valetVersion)) {
+            $this->config['local_env'] = 'valet';
+            $this->ui->success("Laravel Valet detected: " . trim($valetVersion));
+
+            // Get Valet's parked paths
+            $valetPaths = @shell_exec('valet paths 2>/dev/null');
+            if (!empty($valetPaths)) {
+                $this->config['local_env_paths'] = array_filter(array_map('trim', explode("\n", $valetPaths)));
+            }
+
+            return;
+        }
+
+        $this->ui->info("No Laravel Herd or Valet detected. Using standard Laravel dev server.");
+    }
+
+    /**
+     * Configure APP_URL based on detected environment
+     */
+    private function configureAppUrl(string $projectName): void
+    {
+        $localEnv = $this->config['local_env'] ?? null;
+
+        if ($localEnv === 'herd' || $localEnv === 'valet') {
+            // Default to .test domain
+            $domain = "{$projectName}.test";
+            $this->config['app_domain'] = $domain;
+
+            echo "\n";
+            $this->ui->showInfoBox("🌐 LOCAL DOMAIN DETECTED", [
+                "",
+                "Since you're using " . ucfirst($localEnv) . ", your app will be available at:",
+                "",
+                "  https://{$domain}",
+                "",
+                "This will be set as your APP_URL in .env",
+                "",
+            ], 'accent');
+
+            // Ask about SSL
+            if ($this->ui->confirm("Would you like to enable HTTPS/SSL for local development?", true)) {
+                $this->config['enable_ssl'] = true;
+                $this->config['app_url'] = "https://{$domain}";
+
+                $this->ui->info("SSL will be configured after project creation.");
+                $this->ui->info("Command to run: {$localEnv} secure {$projectName}");
+            } else {
+                $this->config['enable_ssl'] = false;
+                $this->config['app_url'] = "http://{$domain}";
+            }
+
+            $this->ui->success("APP_URL will be set to: {$this->config['app_url']}");
+            $this->features[] = ucfirst($localEnv) . " Integration";
+        } else {
+            // Standard localhost setup
+            $this->config['app_url'] = "http://localhost:8000";
+            $this->config['app_domain'] = "localhost:8000";
+            $this->config['enable_ssl'] = false;
+        }
     }
 
     /**
@@ -1089,22 +1181,43 @@ class UltimateInstaller
 
         $panelName = $this->config['filament_panel_name'] ?? 'admin';
         $adminEmail = $this->config['super_admin']['email'] ?? 'admin@example.com';
+        $appUrl = $this->config['app_url'] ?? 'http://localhost:8000';
+        $localEnv = $this->config['local_env'] ?? null;
+        $projectName = $this->config['project_name'];
 
         $nextSteps = [
             "1. Change to your project directory:",
-            "   cd {$this->config['project_name']}",
-            "",
-            "2. Start the development server:",
-            "   composer dev",
-            "",
-            "3. Open your browser:",
-            "   http://localhost:8000",
+            "   cd {$projectName}",
             "",
         ];
 
+        // Different instructions based on Herd/Valet vs standard dev server
+        if ($localEnv === 'herd' || $localEnv === 'valet') {
+            $nextSteps[] = "2. Your app is already running via " . ucfirst($localEnv) . "!";
+            $nextSteps[] = "";
+            $nextSteps[] = "3. Open your browser:";
+            $nextSteps[] = "   {$appUrl}";
+            $nextSteps[] = "";
+
+            if ($this->config['enable_ssl'] ?? false) {
+                $nextSteps[] = "   ✓ SSL is enabled - using HTTPS";
+            } else {
+                $nextSteps[] = "   TIP: Enable SSL with: {$localEnv} secure {$projectName}";
+            }
+            $nextSteps[] = "";
+        } else {
+            $nextSteps[] = "2. Start the development server:";
+            $nextSteps[] = "   composer dev";
+            $nextSteps[] = "";
+            $nextSteps[] = "3. Open your browser:";
+            $nextSteps[] = "   {$appUrl}";
+            $nextSteps[] = "";
+        }
+
         if ($this->config['filament'] ?? false) {
-            $nextSteps[] = "4. Access the admin panel:";
-            $nextSteps[] = "   http://localhost:8000/{$panelName}";
+            $stepNum = ($localEnv === 'herd' || $localEnv === 'valet') ? "4" : "4";
+            $nextSteps[] = "{$stepNum}. Access the admin panel:";
+            $nextSteps[] = "   {$appUrl}/{$panelName}";
             $nextSteps[] = "";
             $nextSteps[] = "   SUPER ADMIN CREDENTIALS:";
             $nextSteps[] = "   Email: {$adminEmail}";
@@ -1129,7 +1242,7 @@ class UltimateInstaller
         $nextSteps[] = "      claude";
         $nextSteps[] = "";
         $nextSteps[] = "   3. Or manage todos from the admin panel:";
-        $nextSteps[] = "      http://localhost:8000/{$panelName}/todos";
+        $nextSteps[] = "      {$appUrl}/{$panelName}/todos";
         $nextSteps[] = "";
         $nextSteps[] = "   Claude Code will automatically check and work on your todos!";
         $nextSteps[] = "";
@@ -1137,7 +1250,7 @@ class UltimateInstaller
         $this->features[] = "Installation time: {$timeStr}";
 
         $this->ui->showSuccessScreen(
-            $this->config['project_name'],
+            $projectName,
             $this->features,
             $nextSteps
         );
@@ -1645,6 +1758,13 @@ BLADE;
 
     private function finalConfiguration(): void
     {
+        // Set APP_URL and APP_NAME in .env
+        $envUpdates = [
+            'APP_NAME' => '"' . $this->config['app_name'] . '"',
+            'APP_URL' => $this->config['app_url'],
+        ];
+        $this->updateEnvFile($envUpdates);
+
         // Generate app key
         $this->runCommandInProject("php artisan key:generate --no-interaction");
 
@@ -1654,8 +1774,43 @@ BLADE;
         // Link storage
         $this->runCommandInProject("php artisan storage:link --no-interaction");
 
+        // Configure SSL if enabled and using Herd/Valet
+        $this->configureLocalSsl();
+
         // Update CLAUDE.md
         $this->updateClaudeMd();
+    }
+
+    /**
+     * Configure SSL for local development with Herd/Valet
+     */
+    private function configureLocalSsl(): void
+    {
+        $localEnv = $this->config['local_env'] ?? null;
+        $enableSsl = $this->config['enable_ssl'] ?? false;
+        $projectName = $this->config['project_name'];
+
+        if (!$localEnv || !$enableSsl) {
+            return;
+        }
+
+        try {
+            if ($localEnv === 'herd') {
+                // Laravel Herd secure command
+                exec("herd secure {$projectName} 2>&1", $output, $returnCode);
+                if ($returnCode === 0) {
+                    $this->ui->success("SSL enabled for {$projectName}.test via Herd");
+                }
+            } elseif ($localEnv === 'valet') {
+                // Laravel Valet secure command
+                exec("cd {$this->projectPath} && valet secure 2>&1", $output, $returnCode);
+                if ($returnCode === 0) {
+                    $this->ui->success("SSL enabled for {$projectName}.test via Valet");
+                }
+            }
+        } catch (Exception $e) {
+            $this->ui->warning("Could not auto-configure SSL. Run manually: {$localEnv} secure {$projectName}");
+        }
     }
 
     /**
