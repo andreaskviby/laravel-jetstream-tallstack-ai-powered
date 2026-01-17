@@ -22,6 +22,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - View modal for completed landing pages
 - HTML copy functionality for generated pages
 
+- **FEATURES_COMPARISON.md**: Comprehensive comparison with other Laravel starter kits
+  - Comparison table with Laravel Breeze and Jetstream
+  - Admin panel options comparison (Filament, Nova, Voyager)
+  - Payment gateway comparison (Stripe, PayPal, Lemon Squeezy, Paddle)
+  - Social authentication provider comparison
+  - File storage options and strategies
+  - Migration guides from Breeze and Jetstream
+  - Decision matrix for choosing the right kit
+
+- **Integration Stubs**: Complete implementation guides for optional features
+  - `filament-install.stub`: Interactive Filament 4 admin panel installer
+  - `StripeIntegration.stub`: Laravel Cashier/Stripe integration with examples
+  - `LemonSqueezyIntegration.stub`: Lemon Squeezy payment integration
+  - `PayPalIntegration.stub`: PayPal REST API integration
+  - `SocialiteIntegration.stub`: OAuth social login (Google, Facebook, GitHub, Twitter)
+  - `FlysystemSplitStorage.stub`: Multi-disk storage configuration (Local + S3/Cloud)
+
 ### Features
 - **AI Landing Page Generator**:
   - Automated landing page creation from SaaS descriptions
@@ -32,6 +49,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Team collaboration support
   - Retry failed generations
   - Save and manage multiple landing pages
+
+- **Filament 4 Admin Panel**:
+  - Modern TALL-based admin interface
+  - Interactive installation helper script
+  - Form builders, table builders, notifications
+  - Plugin ecosystem support
+
+- **Payment Gateways**:
+  - Stripe via Laravel Cashier (subscriptions + one-time payments)
+  - Lemon Squeezy (Merchant of Record, tax handling)
+  - PayPal REST API integration
+  - Complete examples for checkout, webhooks, and customer portals
+
+- **Social Authentication**:
+  - Laravel Socialite integration
+  - Google, Facebook, GitHub, Twitter support
+  - Complete controller and migration examples
+  - OAuth app setup instructions
+
+- **Split Storage**:
+  - Multi-disk filesystem configuration
+  - Local + S3/DigitalOcean Spaces/Cloudflare R2
+  - Storage service helper class
+  - Best practices and cost optimization
+
+### Benefits
+- **Modular Design**: Use only the features you need
+- **Production Ready**: All stubs include security best practices
+- **Well Documented**: Each stub includes setup instructions and examples
+- **Time Saving**: Avoid repetitive integration work
+- **Best Practices**: Learn from comprehensive, commented code examples
 
 ## [1.0.0] - 2026-01-17
 
@@ -123,8 +171,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned Features
+### Planned Features (v1.2+)
 - OAuth integration for Claude AI
+- Interactive installer options for new features
 - Additional OTP delivery methods (SMS, WhatsApp)
 - More AI-powered feature examples
 - Automated testing suite
