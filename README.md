@@ -113,6 +113,23 @@ CLAUDE_API_KEY=your-api-key-here
 CLAUDE_MODEL=claude-3-5-sonnet-20241022
 ```
 
+Get your API key from: https://console.anthropic.com/
+
+### AI Landing Page Generator Setup
+
+To enable the AI Landing Page Generator feature:
+
+1. **Quick Install**: Run the installation script
+   ```bash
+   bash setup/install-todo-feature.sh
+   ```
+
+2. **Manual Install**: Follow the guide at `setup/INSTALL_TODO_FEATURE.md`
+
+3. **Verify Setup**: Check the feature works by visiting `/todos` after logging in
+
+See `setup/TODO_FEATURE_EXAMPLES.md` for example SaaS ideas to try.
+
 ### Database Configuration
 
 **SQLite** (default for quick start):
@@ -259,6 +276,25 @@ rm -rf node_modules package-lock.json
 npm install
 npm run build
 ```
+
+### AI Landing Page Generator Not Working
+
+**Claude API key not configured**:
+```bash
+# Add to .env
+CLAUDE_API_KEY=your-api-key-here
+php artisan config:clear
+```
+
+**Task stays in "Processing"**:
+- Check your Claude API key is valid
+- Ensure internet connection is working
+- Check logs: `tail -f storage/logs/laravel.log`
+
+**Menu item not appearing**:
+- Verify routes are added to `routes/web.php`
+- Check navigation menu is updated
+- Clear cache: `php artisan view:clear`
 
 ## Contributing
 
