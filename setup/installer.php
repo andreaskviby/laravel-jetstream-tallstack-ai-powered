@@ -392,13 +392,13 @@ class Installer
         }
         
         // Copy aliases.sh to project root
-        $aliasesPath = base_path('aliases.sh');
+        $aliasesPath = getcwd() . '/aliases.sh';
         file_put_contents($aliasesPath, $aliasesStubContent);
         chmod($aliasesPath, 0755);
         $this->printSuccess("Created aliases.sh in project root");
         
         // Create Console/Commands directory if it doesn't exist
-        $commandsDir = app_path('Console/Commands');
+        $commandsDir = getcwd() . '/app/Console/Commands';
         if (!is_dir($commandsDir)) {
             mkdir($commandsDir, 0755, true);
         }

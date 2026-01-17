@@ -149,7 +149,7 @@ class AliasesListCommand extends Command
         $this->newLine();
         
         $this->line('<fg=yellow>To load aliases for this session only:</>');
-        $this->line('  <fg=cyan>cd ' . base_path() . '</>');
+        $this->line('  <fg=cyan>cd ' . dirname($aliasFile) . '</>');
         $this->line('  <fg=cyan>source aliases.sh</>');
         $this->newLine();
 
