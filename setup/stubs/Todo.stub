@@ -1,0 +1,85 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Todo extends Model
+{
+    use HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'user_id',
+        'team_id',
+        'title',
+        'description',
+        'type',
+        'status',
+        'metadata',
+        'result',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'metadata' => 'array',
+    ];
+
+    /**
+     * Get the user that owns the todo.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the team that owns the todo.
+     */
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
+    }
+
+    /**
+     * Check if the todo is pending.
+     */
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    /**
+     * Check if the todo is processing.
+     */
+    public function isProcessing(): bool
+    {
+        return $this->status === 'processing';
+    }
+
+    /**
+     * Check if the todo is completed.
+     */
+    public function isCompleted(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    /**
+     * Check if the todo has failed.
+     */
+    public function hasFailed(): bool
+    {
+        return $this->status === 'failed';
+    }
+}

@@ -19,6 +19,8 @@ A comprehensive starter kit for quickly bootstrapping Laravel projects with Jets
 
 ### AI Integration
 - Claude AI API integration ready
+- AI-powered landing page generator
+- Researcher agent for creating SaaS landing pages
 - OAuth login support for Claude
 - Pre-configured for AI-powered features
 
@@ -132,6 +134,23 @@ CLAUDE_API_KEY=your-api-key-here
 CLAUDE_MODEL=claude-3-5-sonnet-20241022
 ```
 
+Get your API key from: https://console.anthropic.com/
+
+### AI Landing Page Generator Setup
+
+To enable the AI Landing Page Generator feature:
+
+1. **Quick Install**: Run the installation script
+   ```bash
+   bash setup/install-todo-feature.sh
+   ```
+
+2. **Manual Install**: Follow the guide at `setup/INSTALL_TODO_FEATURE.md`
+
+3. **Verify Setup**: Check the feature works by visiting `/todos` after logging in
+
+See `setup/TODO_FEATURE_EXAMPLES.md` for example SaaS ideas to try.
+
 ### Database Configuration
 
 **MySQL** (recommended for production):
@@ -183,6 +202,18 @@ Replaces traditional password authentication:
 - 10-minute expiration (configurable)
 - Prefilled codes for local development
 - Secure code storage and verification
+
+### AI Landing Page Generator
+
+Create stunning landing pages for your SaaS ideas using AI:
+- **Automated Generation**: Describe your idea and let AI create the page
+- **Professional Design**: Tailwind CSS-styled, responsive pages
+- **Complete Sections**: Hero, features, benefits, pricing, and more
+- **Task Management**: Save, view, and manage generated pages
+- **Team Collaboration**: Share landing pages within your team
+- **Retry Failed Tasks**: Automatic retry on generation failures
+
+See `setup/stubs/TODO_FEATURE_README.stub` for detailed documentation.
 
 ### TALL Stack
 
@@ -291,6 +322,25 @@ rm -rf node_modules package-lock.json
 npm install
 npm run build
 ```
+
+### AI Landing Page Generator Not Working
+
+**Claude API key not configured**:
+```bash
+# Add to .env
+CLAUDE_API_KEY=your-api-key-here
+php artisan config:clear
+```
+
+**Task stays in "Processing"**:
+- Check your Claude API key is valid
+- Ensure internet connection is working
+- Check logs: `tail -f storage/logs/laravel.log`
+
+**Menu item not appearing**:
+- Verify routes are added to `routes/web.php`
+- Check navigation menu is updated
+- Clear cache: `php artisan view:clear`
 
 ## Contributing
 

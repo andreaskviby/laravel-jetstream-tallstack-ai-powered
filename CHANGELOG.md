@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-17
+
+### Added
+- AI-powered landing page generator feature
+- Todo/task management system for AI-generated content
+- Researcher agent service for creating landing pages
+- Database migration for todos table
+- Todo model with user and team relationships
+- TodoManager Livewire component for UI
+- ResearcherAgentService for Claude AI integration
+- Comprehensive feature documentation (TODO_FEATURE_README.stub)
+- Navigation menu integration for AI Landing Pages
+- Support for landing page and research task types
+- Retry functionality for failed tasks
+- View modal for completed landing pages
+- HTML copy functionality for generated pages
+
+### Features
+- **AI Landing Page Generator**:
+  - Automated landing page creation from SaaS descriptions
+  - Claude AI-powered generation
+  - Tailwind CSS-styled responsive pages
+  - Complete sections (hero, features, benefits, pricing, CTA, footer)
+  - Task status tracking (pending, processing, completed, failed)
+  - Team collaboration support
+  - Retry failed generations
+  - Save and manage multiple landing pages
+
 ## [1.0.0] - 2026-01-17
 
 ### Added
