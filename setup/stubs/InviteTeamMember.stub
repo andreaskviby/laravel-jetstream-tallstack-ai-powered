@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Actions\Jetstream;
+
+use App\Models\TeamInvitation;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Gate;
+use Laravel\Jetstream\Contracts\InvitesTeamMembers;
+use Laravel\Jetstream\Events\InvitingTeamMember;
+use Laravel\Jetstream\Jetstream;
+
+class InviteTeamMember implements InvitesTeamMembers
+{
+    /**
+     * Invite a new team member to the given team.
+     *
+     * @param  mixed  $user
+     * @param  mixed  $team
+     * @param  string  $email
+     * @param  string|null  $role
+     * @return void
+     */
+    public function invite($user, $team, string $email, string $role = null)
+    {
+        Gate::forUser($user)->authorize('addTeamMember', $team);
+
+        InvitingTeamMember::dispatch($team, $email, $role);
+
+        $invitation = $team->teamInvitations()->create([
+            'email' => $email,
+            'role' => $role,
+        ]);
+
+        // Send enhanced invitation email
+        $this->sendInvitationEmail($invitation, $user, $team);
+    }
+
+    /**
+     * Send an enhanced invitation email to the invited user.
+     *
+     * @param  \App\Models\TeamInvitation  $invitation
+     * @param  mixed  $user
+     * @param  mixed  $team
+     * @return void
+     */
+    protected function sendInvitationEmail($invitation, $user, $team)
+    {
+        Mail::send('emails.team-invitation', [
+            'invitation' => $invitation,
+            'inviter' => $user,
+            'team' => $team,
+            'acceptUrl' => route('team-invitations.accept', ['invitation' => $invitation]),
+        ], function ($message) use ($invitation, $team) {
+            $message->to($invitation->email)
+                    ->subject("You've been invited to join {$team->name}");
+        });
+    }
+}
