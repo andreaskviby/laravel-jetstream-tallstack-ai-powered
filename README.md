@@ -38,6 +38,8 @@ Install directly from the command line:
 curl -s https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/main/install.sh | bash -s -- my-project
 ```
 
+> **Note**: The installation script downloads and executes code. Always review scripts before running them. You can inspect the script at: https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/blob/main/install.sh
+
 Or download and run:
 
 ```bash

@@ -45,7 +45,8 @@ test_check() {
     local description=$1
     local command=$2
     
-    if eval "$command" > /dev/null 2>&1; then
+    # Safely execute command without eval
+    if $command > /dev/null 2>&1; then
         print_success "$description"
         ((TESTS_PASSED++))
         return 0

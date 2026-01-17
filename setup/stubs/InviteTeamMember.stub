@@ -45,14 +45,29 @@ class InviteTeamMember implements InvitesTeamMembers
      */
     protected function sendInvitationEmail($invitation, $user, $team)
     {
-        Mail::send('emails.team-invitation', [
-            'invitation' => $invitation,
-            'inviter' => $user,
-            'team' => $team,
-            'acceptUrl' => route('team-invitations.accept', ['invitation' => $invitation]),
-        ], function ($message) use ($invitation, $team) {
-            $message->to($invitation->email)
-                    ->subject("You've been invited to join {$team->name}");
-        });
+        // Check if custom template exists, fallback to default Jetstream template
+        $viewPath = resource_path('views/emails/team-invitation.blade.php');
+        
+        if (file_exists($viewPath)) {
+            Mail::send('emails.team-invitation', [
+                'invitation' => $invitation,
+                'inviter' => $user,
+                'team' => $team,
+                'acceptUrl' => route('team-invitations.accept', ['invitation' => $invitation]),
+            ], function ($message) use ($invitation, $team) {
+                $message->to($invitation->email)
+                        ->subject("You've been invited to join {$team->name}");
+            });
+        } else {
+            // Fallback to simple text email
+            $acceptUrl = route('team-invitations.accept', ['invitation' => $invitation]);
+            $body = "{$user->name} has invited you to join the team: {$team->name}\n\n";
+            $body .= "Click here to accept: {$acceptUrl}";
+            
+            Mail::raw($body, function ($message) use ($invitation, $team) {
+                $message->to($invitation->email)
+                        ->subject("You've been invited to join {$team->name}");
+            });
+        }
     }
 }

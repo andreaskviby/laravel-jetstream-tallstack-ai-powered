@@ -80,10 +80,21 @@ class SendOTPCode
      */
     protected function sendCodeViaEmail(User $user, string $code): void
     {
-        Mail::send('emails.otp', ['code' => $code], function ($message) use ($user) {
-            $message->to($user->email)
-                    ->subject('Your Login Code');
-        });
+        // Check if template exists, fallback to text-only email
+        $viewPath = resource_path('views/emails/otp.blade.php');
+        
+        if (file_exists($viewPath)) {
+            Mail::send('emails.otp', ['code' => $code], function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Your Login Code');
+            });
+        } else {
+            // Fallback to raw text email
+            Mail::raw("Your login code is: $code\n\nThis code will expire in 10 minutes.", function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Your Login Code');
+            });
+        }
     }
 
     /**

@@ -107,7 +107,17 @@ print_success "Laravel upgraded to latest stable version"
 
 # Copy setup script
 print_info "Downloading setup script..."
-curl -sL https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/main/setup/installer.php -o setup-installer.php
+TEMP_SCRIPT=$(mktemp)
+curl -sL https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/main/setup/installer.php -o "$TEMP_SCRIPT"
+
+# Verify the download succeeded
+if [ ! -s "$TEMP_SCRIPT" ]; then
+    print_error "Failed to download setup script"
+    rm -f "$TEMP_SCRIPT"
+    exit 1
+fi
+
+mv "$TEMP_SCRIPT" setup-installer.php
 
 # Run the interactive setup
 print_header "Starting Interactive Setup"

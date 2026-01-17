@@ -163,6 +163,12 @@ class Installer
         echo $this->colorize("Database port (default: 3306): ", 'white');
         $port = trim(fgets(STDIN)) ?: '3306';
         
+        // Validate port is numeric
+        if (!is_numeric($port) || $port < 1 || $port > 65535) {
+            $this->printError("Invalid port number. Using default 3306.");
+            $port = '3306';
+        }
+        
         echo $this->colorize("Database username (default: root): ", 'white');
         $username = trim(fgets(STDIN)) ?: 'root';
         
@@ -173,10 +179,22 @@ class Installer
             echo $this->colorize("New database name: ", 'white');
             $database = trim(fgets(STDIN));
             
-            // Try to create database
+            // Validate database name (alphanumeric and underscores only)
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $database)) {
+                $this->printError("Invalid database name. Use only letters, numbers, and underscores.");
+                return;
+            }
+            
+            // Try to create database using prepared statement
             try {
-                $pdo = new PDO("mysql:host=$host;port=$port", $username, $password);
-                $pdo->exec("CREATE DATABASE IF NOT EXISTS `$database` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                $dsn = sprintf("mysql:host=%s;port=%s;charset=utf8mb4", $host, $port);
+                $pdo = new PDO($dsn, $username, $password, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+                ]);
+                
+                // Use backticks and validated name for database creation
+                $stmt = $pdo->prepare("CREATE DATABASE IF NOT EXISTS `$database` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                $stmt->execute();
                 $this->printSuccess("Database '$database' created successfully");
             } catch (PDOException $e) {
                 $this->printError("Failed to create database: " . $e->getMessage());
@@ -186,6 +204,12 @@ class Installer
         } else {
             echo $this->colorize("Database name: ", 'white');
             $database = trim(fgets(STDIN));
+            
+            // Validate database name
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $database)) {
+                $this->printError("Invalid database name. Use only letters, numbers, and underscores.");
+                return;
+            }
         }
         
         // Update .env
@@ -392,7 +416,10 @@ class Installer
     {
         $output = [];
         $returnVar = 0;
-        exec($command . ' 2>&1', $output, $returnVar);
+        
+        // Sanitize command to prevent injection
+        $safeCommand = escapeshellcmd($command);
+        exec($safeCommand . ' 2>&1', $output, $returnVar);
         
         if ($returnVar !== 0) {
             $this->printWarning("Command may have had issues: $command");
@@ -406,7 +433,15 @@ class Installer
 
     private function commandExists($command)
     {
-        $return = shell_exec(sprintf("which %s", escapeshellarg($command)));
+        // Whitelist of allowed commands to check
+        $allowedCommands = ['npm', 'node', 'mysql', 'git', 'php', 'composer'];
+        $command = trim($command);
+        
+        if (!in_array($command, $allowedCommands)) {
+            return false;
+        }
+        
+        $return = shell_exec(sprintf("which %s 2>/dev/null", escapeshellarg($command)));
         return !empty($return);
     }
 
