@@ -36,6 +36,52 @@ TALL is an acronym for:
 | **Learning Curve** | Low | Medium | Medium |
 | **Best For** | Simple apps | SaaS products | AI-powered SaaS |
 
+### SaaS-Focused Starter Kits
+
+| Feature | Laravel Spark | Wave | SaaSykit | This Starter Kit |
+|---------|---------------|------|----------|------------------|
+| **Cost** | $99-$199 | Free | $299-$499 | Free |
+| **TALL Stack** | Optional | ✅ Native | ✅ Available | ✅ Native |
+| **Philosophy** | Official SaaS Kit | Community SaaS | Commercial SaaS | AI-First SaaS |
+| **Billing/Payments** | Stripe, Paddle | Stripe, Paddle | Stripe, Paddle, Lemon | Stubs Included |
+| **Subscription Management** | ✅ Advanced | ✅ | ✅ Advanced | Via Stubs |
+| **Per-Seat Billing** | ✅ | ❌ | ✅ | Via Stubs |
+| **Team Management** | ✅ Advanced | ✅ | ✅ Advanced | ✅ Enhanced |
+| **Admin Panel** | Basic | Filament/Voyager | Custom | Filament (Optional) |
+| **Blog/Content** | ❌ | ✅ Built-in | ✅ | Manual |
+| **Metrics/Analytics** | Basic | ❌ | ✅ (MRR, Churn) | Manual |
+| **Multi-tenancy** | Via Teams | ✅ | ✅ | Via Jetstream |
+| **Email Providers** | Default | ✅ Multiple | ✅ Multiple | Default |
+| **Social Login** | ❌ | ✅ | ✅ | ✅ (Optional) |
+| **AI Integration** | ❌ | ❌ | ❌ | ✅ Claude |
+| **API Support** | ✅ | ✅ | ✅ | ✅ Sanctum |
+| **Notifications** | ✅ | ✅ | ✅ Advanced | ✅ |
+| **User Impersonation** | ❌ | ✅ | ✅ | Manual |
+| **Role Management** | ✅ | ✅ | ✅ | Via Jetstream |
+| **Support/Docs** | Official | Community | Commercial | Open Source |
+| **Updates** | Annual License | Free Forever | Annual License | Free Forever |
+| **Best For** | Laravel Devs | Open Source Fans | Feature-Rich SaaS | AI-Powered Apps |
+
+**Key Differences:**
+- **Laravel Spark**: Official Laravel product, premium pricing, deep Laravel integration
+- **Wave**: Free and open-source, community-driven, includes blog/changelog
+- **SaaSykit**: Commercial product with advanced metrics and multi-tenancy features
+- **This Starter Kit**: Free, AI-focused, modular stub-based approach
+
+### Rapid Development Kits
+
+| Feature | LaraFast | Artiplate | Streamline | This Starter Kit |
+|---------|----------|-----------|------------|------------------|
+| **Cost** | Paid | Paid | Paid | Free |
+| **Focus** | Speed | Startups | Quick Deploy | Flexibility |
+| **Billing** | ✅ Stripe | ✅ | ✅ Lemon Squeezy | Stubs (3 options) |
+| **Authentication** | ✅ | ✅ | ✅ Social | ✅ OTP + Social |
+| **Admin Panel** | ✅ | ✅ | ✅ | Filament (Optional) |
+| **Blog/SEO** | ✅ | ✅ | ✅ | Manual |
+| **Themes** | ✅ | ✅ | ✅ Customizable | Tailwind Base |
+| **AI Features** | ❌ | ❌ | ❌ | ✅ Claude |
+| **Best For** | MVPs | Early Stage | Quick Launch | Custom Solutions |
+
 ### Admin Panel Options
 
 | Feature | Filament | Nova | Voyager | This Kit + Filament |
@@ -113,6 +159,155 @@ TALL is an acronym for:
 - **S3/Cloud**: Product images, videos, large files
 - **Separate Bucket**: User-generated content (UGC)
 - **CDN**: Serve static assets globally
+
+---
+
+## Detailed Starter Kit Descriptions
+
+### 1. Laravel Spark (Premium Official)
+
+**Price**: $99/project or $199/unlimited projects (annual updates)  
+**Maintained by**: Taylor Otwell (Laravel creator)
+
+**Key Features**:
+- **Subscription Billing**: Native Stripe and Paddle integration via Laravel Cashier
+- **Billing Portal**: Isolated customer portal for subscription management
+- **Per-Seat Pricing**: Dynamic user/team-based billing
+- **Team Management**: Full organization support with role-based permissions
+- **Invoicing**: PDF invoices with automatic generation
+- **Trial Support**: Easy trial period configuration
+- **Multi-Gateway**: Switch between Stripe and Paddle with minimal changes
+
+**Best For**: SaaS founders and teams who want official Laravel support and prefer not to build billing infrastructure from scratch.
+
+**Pros**: Deep Laravel integration, maintained by core team, comprehensive billing features  
+**Cons**: Premium pricing, requires annual license renewal for updates
+
+### 2. Wave (Free Open Source)
+
+**Price**: Free & Open Source  
+**Repository**: GitHub - thedevdojo/wave
+
+**Key Features**:
+- **Complete SaaS Suite**: Authentication, subscriptions, roles, notifications
+- **Built-in Blog**: Content management with SEO tools
+- **Admin Dashboard**: Filament or Voyager integration
+- **User Impersonation**: Support and debugging capability
+- **Changelog Module**: Keep users informed of updates
+- **Username Login**: Flexible authentication options
+- **Multi-provider Billing**: Stripe and Paddle support
+- **API Ready**: Built-in API for integrations
+
+**Best For**: Developers who want a free, comprehensive SaaS foundation with active community support.
+
+**Pros**: Free forever, active community, feature-rich  
+**Cons**: Community support only, requires more customization for unique needs
+
+### 3. SaaSykit (Premium Commercial)
+
+**Price**: $299-$499 (with annual updates)  
+**Focus**: Enterprise-grade SaaS features
+
+**Key Features**:
+- **Advanced Metrics**: MRR (Monthly Recurring Revenue), Churn Rate, ARPU
+- **Multi-Payment**: Stripe, Paddle, and Lemon Squeezy support
+- **Multi-Tenancy**: Full tenant isolation and management
+- **Multi-Email Providers**: Flexible email service integration
+- **Built-in Blog**: SEO-optimized content platform
+- **Advanced Analytics**: Business intelligence dashboards
+- **User Dashboard**: Comprehensive user management
+- **Admin Dashboard**: Full-featured administration panel
+
+**Best For**: Teams building feature-rich SaaS products who need advanced metrics and are willing to invest in a premium solution.
+
+**Pros**: Enterprise features, advanced analytics, comprehensive documentation  
+**Cons**: Higher cost, commercial license required
+
+### 4. LaraFast (Premium MVP Tool)
+
+**Price**: Paid (various tiers)  
+**Focus**: Rapid MVP development
+
+**Key Features**:
+- **Quick Setup**: Designed for speed and rapid prototyping
+- **Stripe Integration**: Built-in subscription billing
+- **Core Functions**: Essential web application features
+- **Scalable Foundation**: Production-ready architecture
+- **Theme System**: Pre-built themes for quick styling
+
+**Best For**: Entrepreneurs and developers who need to launch MVPs quickly.
+
+**Pros**: Speed-focused, good for prototypes  
+**Cons**: Commercial license, may require customization for complex needs
+
+### 5. Artiplate (Premium Startup Kit)
+
+**Price**: Paid  
+**Focus**: Startup and early-stage projects
+
+**Key Features**:
+- **Authentication System**: Complete user management
+- **Theme Engine**: Customizable design system
+- **Payment Integration**: Built-in payment processing
+- **Notification System**: Real-time notifications
+- **Startup Optimized**: Features for MVP development
+
+**Best For**: Startups in early stages looking for rapid development tools.
+
+**Pros**: Startup-focused features, rapid setup  
+**Cons**: Commercial pricing, limited to startup-focused features
+
+### 6. Streamline (Premium Quick Deploy)
+
+**Price**: Paid  
+**Focus**: Fast deployment with modern features
+
+**Key Features**:
+- **Social Authentication**: Built-in OAuth providers
+- **Role & Permissions**: Comprehensive access control
+- **Lemon Squeezy Integration**: Modern payment solution
+- **Blog Platform**: SEO and content marketing
+- **Customizable UI**: Flexible design system
+- **Quick Deployment**: Production-ready from start
+
+**Best For**: Teams prioritizing quick deployment with modern payment solutions.
+
+**Pros**: Modern stack, Lemon Squeezy integration, quick setup  
+**Cons**: Commercial license, premium pricing
+
+### 7. Laravel Fortify (Free Backend Only)
+
+**Price**: Free  
+**Official**: Laravel Package
+
+**Key Features**:
+- **Backend Authentication**: No frontend included
+- **Headless Design**: Perfect for APIs and SPAs
+- **2FA Support**: Two-factor authentication
+- **Email Verification**: Built-in email workflows
+- **Password Reset**: Secure reset functionality
+
+**Best For**: Teams building custom UIs, mobile apps, or SPAs that need backend authentication only.
+
+**Pros**: Official Laravel package, flexible, no UI constraints  
+**Cons**: No frontend, requires custom UI implementation
+
+### 8. Ship Fast Labs Kits (Premium Modern)
+
+**Price**: Paid  
+**Focus**: Modern development workflow
+
+**Key Features**:
+- **Multiple Stacks**: React, Vue, or Livewire
+- **Code Quality Tools**: Pint, PHPStan integration
+- **Advanced Auth**: Modern authentication patterns
+- **Deployment Ready**: CI/CD configurations included
+- **Best Practices**: Opinionated structure
+
+**Best For**: Teams prioritizing code quality and modern development practices.
+
+**Pros**: High code quality standards, modern tooling  
+**Cons**: Premium pricing, opinionated structure
 
 ---
 
@@ -212,24 +407,104 @@ curl -s https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallsta
 
 ---
 
+## When to Choose Each Starter Kit
+
+### Quick Decision Matrix
+
+Choose **Laravel Breeze** if:
+- ✅ You need simple authentication only
+- ✅ You want minimal overhead and full control
+- ✅ You're learning Laravel
+- ❌ Don't need: Teams, advanced auth, or billing
+
+Choose **Laravel Jetstream** if:
+- ✅ You need teams and 2FA
+- ✅ You want official Laravel scaffolding
+- ✅ You need API tokens (Sanctum)
+- ❌ Don't need: Payment integration or admin panel
+
+Choose **Laravel Spark** if:
+- ✅ You need enterprise subscription billing
+- ✅ You want official Laravel support
+- ✅ You can invest $99-$199
+- ✅ You need per-seat billing
+- ❌ Don't need: Free solution or AI features
+
+Choose **Wave** if:
+- ✅ You want a free, comprehensive SaaS kit
+- ✅ You need a built-in blog and changelog
+- ✅ You prefer open-source and community support
+- ✅ You want user impersonation features
+- ❌ Don't need: Commercial support or AI integration
+
+Choose **SaaSykit** if:
+- ✅ You need advanced metrics (MRR, Churn, ARPU)
+- ✅ You need multi-tenancy features
+- ✅ You can invest $299-$499
+- ✅ You want multiple payment providers
+- ❌ Don't need: Free solution or minimal features
+
+Choose **LaraFast/Artiplate/Streamline** if:
+- ✅ You need to launch an MVP extremely quickly
+- ✅ You prefer pre-built themes and components
+- ✅ You can invest in a commercial license
+- ❌ Don't need: AI features or extensive customization
+
+Choose **Laravel Fortify** if:
+- ✅ You're building a custom UI or mobile app
+- ✅ You only need backend authentication
+- ✅ You want official Laravel package
+- ❌ Don't need: Pre-built frontend
+
+Choose **This Starter Kit** if:
+- ✅ You need AI-powered features (Claude integration)
+- ✅ You want passwordless OTP authentication
+- ✅ You need optional SaaS features (modular approach)
+- ✅ You want free and open-source
+- ✅ You need Filament 4 admin panel option
+- ✅ You want comprehensive integration stubs
+- ❌ Don't need: Traditional password auth or commercial support
+
+---
+
+## Feature Comparison Summary
+
+| Priority | Budget | Need | Recommended Kit |
+|----------|--------|------|-----------------|
+| Speed | Free | Basic auth | **Laravel Breeze** |
+| Speed | Free | Teams + 2FA | **Laravel Jetstream** |
+| Speed | Paid | MVP launch | **LaraFast/Streamline** |
+| SaaS | Free | Complete suite | **Wave** |
+| SaaS | Paid | Advanced features | **SaaSykit** |
+| SaaS | Paid | Official support | **Laravel Spark** |
+| SaaS | Free | AI-powered | **This Starter Kit** |
+| Custom | Free | API/Mobile | **Laravel Fortify** |
+| Admin | Free | Dashboard focus | **Filament Starter** |
+
+---
+
 ## When to Choose This Starter Kit
 
 ### ✅ Best Choice When You Need:
 
 - **AI-Powered Applications**: Claude AI integration ready
 - **Modern Authentication**: Passwordless OTP system
-- **SaaS Features**: Teams, subscriptions, payments
+- **SaaS Features**: Teams, subscriptions, payments (via stubs)
 - **Admin Panel**: Filament 4 option included
 - **Rapid Development**: Interactive setup saves time
 - **Production Ready**: Security and best practices built-in
 - **Extensibility**: Easy to add features later
+- **Free & Open Source**: No licensing costs
+- **Modular Approach**: Use only what you need
 
 ### ⚠️ Consider Alternatives When:
 
-- **Traditional Auth Required**: Some users prefer passwords
+- **Traditional Auth Required**: Wave or Spark have password auth
 - **Minimal Setup**: Breeze is lighter if you need basics only
-- **Budget Constraints**: All features are free, but setup time varies
+- **Commercial Support**: Spark or SaaSykit offer paid support
+- **Built-in Metrics**: SaaSykit has advanced analytics
 - **Learning Laravel**: Breeze might be simpler to understand
+- **Pre-built Blog**: Wave has integrated blog/changelog
 
 ---
 
@@ -296,51 +571,94 @@ curl -s https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallsta
 
 ---
 
-## Community Starter Kits
+## Community & Commercial Starter Kits
 
-Beyond official kits, several community projects offer TALL stack integration:
+Beyond official kits, several community and commercial projects offer comprehensive solutions:
 
-| Project | Focus | Notable Features |
-|---------|-------|------------------|
-| **LaraFast** | SaaS Boilerplate | Payments, Teams, Admin |
-| **Laravel Tall** | Pure TALL | Minimal, focused |
-| **Jetstream Plus** | Jetstream Extended | Additional features |
-| **Filament Starter** | Admin-first | Filament-based everything |
+| Project | Type | Focus | Notable Features | Price |
+|---------|------|-------|------------------|-------|
+| **Laravel Spark** | Official | SaaS Billing | Per-seat, teams, billing portal | $99-$199 |
+| **Wave** | Open Source | Complete SaaS | Blog, metrics, free | Free |
+| **SaaSykit** | Commercial | Feature-Rich | Advanced metrics, multi-tenancy | $299-$499 |
+| **LaraFast** | Commercial | Speed | Quick MVP launch | Paid |
+| **Artiplate** | Commercial | Startups | MVP-focused | Paid |
+| **Streamline** | Commercial | Quick Deploy | Modern stack | Paid |
+| **Ship Fast Labs** | Commercial | Quality | Code standards, CI/CD | Paid |
+| **Filament Starter** | Open Source | Admin-first | Dashboard-focused | Free |
 
-**This Starter Kit** positions itself as a **balanced, AI-ready solution** that combines the best of Jetstream with modern passwordless auth and optional SaaS features.
+**This Starter Kit** positions itself as a **free, AI-ready, modular solution** that provides:
+- Core features out of the box (OTP auth, teams, AI integration)
+- Optional features via comprehensive stubs (payments, admin, social login, storage)
+- No licensing costs or restrictions
+- Flexibility to use only what you need
 
 ---
 
 ## Conclusion
 
+The Laravel ecosystem offers numerous starter kits for different needs and budgets:
+
+### Free & Open Source Options
+- **Laravel Breeze**: Minimal authentication
+- **Laravel Jetstream**: Teams and 2FA
+- **Laravel Fortify**: Backend-only auth
+- **Wave**: Complete SaaS suite
+- **This Starter Kit**: AI-powered with modular features
+
+### Premium Commercial Options
+- **Laravel Spark**: Official SaaS billing ($99-$199)
+- **SaaSykit**: Enterprise features ($299-$499)
+- **LaraFast/Artiplate/Streamline**: Rapid MVP tools (Paid)
+
+### Unique Positioning
+
 This starter kit provides a **modern, production-ready foundation** for Laravel applications that need:
 
-- **Advanced authentication** (OTP/passwordless)
-- **Team collaboration** features
-- **AI integration** capabilities
-- **Optional SaaS features** (payments, admin, social login)
+- **Advanced authentication** (OTP/passwordless) - Unique among Laravel kits
+- **Team collaboration** features - Based on Jetstream
+- **AI integration** capabilities - Claude AI ready
+- **Optional SaaS features** - Via comprehensive stubs, not forced dependencies
 - **Split storage** for scalable file management
+- **Free & Open Source** - No licensing restrictions
+- **Modular approach** - Use only what you need
 
-It builds on the solid foundation of **Laravel Jetstream** while adding modern conveniences and optional integrations that most SaaS applications eventually need.
+It builds on the solid foundation of **Laravel Jetstream** while adding modern conveniences and optional integrations that most SaaS applications eventually need, without the premium price tag.
 
-### Quick Decision Matrix
+### Selection Guide by Use Case
 
-Choose **Laravel Breeze** if: Simple auth is all you need  
-Choose **Laravel Jetstream** if: You need teams and 2FA  
-Choose **This Starter Kit** if: You need AI features + modern auth + optional SaaS features  
-Choose **Filament** if: Admin panel is your primary need
+| Use Case | Best Choice | Why |
+|----------|-------------|-----|
+| Learning Laravel | Breeze | Simplest, most transparent |
+| Corporate App | Jetstream | Official, well-documented |
+| SaaS Startup (Free) | Wave or This Kit | Comprehensive, no cost |
+| SaaS Startup (Paid) | Spark or SaaSykit | Advanced features, support |
+| AI-Powered App | This Starter Kit | Only kit with AI integration |
+| Quick MVP | LaraFast/Streamline | Pre-built everything |
+| Custom UI | Fortify | Backend-only, bring your UI |
+| Admin Focus | Filament Starter | Dashboard-first approach |
 
 ---
 
 ## Resources
 
+### Official Documentation
 - [Laravel Official Docs](https://laravel.com/docs)
 - [Jetstream Docs](https://jetstream.laravel.com)
 - [Livewire Docs](https://livewire.laravel.com)
 - [Filament Docs](https://filamentphp.com)
 - [Laravel Cashier](https://laravel.com/docs/billing)
 - [Laravel Socialite](https://laravel.com/docs/socialite)
+
+### Starter Kit Resources
+- [Laravel Spark](https://spark.laravel.com)
+- [Wave SaaS Kit](https://devdojo.com/wave)
+- [SaaSykit](https://saasykit.com)
 - [This Project Repository](https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered)
+
+### Comparison Articles
+- [10 Best Laravel Starter Kits for 2025](https://saasykit.com/blog/10-best-laravel-starter-kits-for-2025)
+- [Best Laravel Starter Kits](https://1v0.net/blog/best-laravel-starter-kits-breeze-jetstream-spark-nova-22-more/)
+- [Laravel Boilerplates](https://www.buildkits.dev/categories/laravel)
 
 ---
 
