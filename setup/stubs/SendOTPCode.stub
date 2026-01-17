@@ -80,11 +80,12 @@ class SendOTPCode
      */
     protected function sendCodeViaEmail(User $user, string $code): void
     {
-        // Check if template exists, fallback to text-only email
-        $viewPath = resource_path('views/emails/otp.blade.php');
+        // Email view path - make this configurable via config if needed
+        $emailView = config('auth.otp.email_view', 'emails.otp');
+        $viewPath = resource_path("views/{$emailView}.blade.php");
         
         if (file_exists($viewPath)) {
-            Mail::send('emails.otp', ['code' => $code], function ($message) use ($user) {
+            Mail::send($emailView, ['code' => $code], function ($message) use ($user) {
                 $message->to($user->email)
                         ->subject('Your Login Code');
             });

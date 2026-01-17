@@ -173,6 +173,7 @@ class Installer
         $username = trim(fgets(STDIN)) ?: 'root';
         
         echo $this->colorize("Database password: ", 'white');
+        $this->printWarning("Note: Password will be visible. Press Ctrl+C to cancel if concerned.");
         $password = trim(fgets(STDIN));
         
         if ($action === 'create') {
@@ -194,7 +195,10 @@ class Installer
                 
                 // Database name is validated with regex above, safe to use in query
                 // Note: Database names cannot be parameterized in PDO
-                $sql = "CREATE DATABASE IF NOT EXISTS `" . $database . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+                $sql = sprintf(
+                    "CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+                    $database
+                );
                 $pdo->exec($sql);
                 $this->printSuccess("Database '$database' created successfully");
             } catch (PDOException $e) {
@@ -223,8 +227,15 @@ class Installer
             'DB_PASSWORD' => $password,
         ]);
         
+        // Set secure file permissions on .env
+        if (file_exists('.env')) {
+            chmod('.env', 0600);
+            $this->printInfo("Set .env file permissions to 0600 (owner read/write only)");
+        }
+        
         $this->config['database'] = 'mysql';
         $this->printSuccess("MySQL configured successfully");
+        $this->printWarning("Important: Keep your .env file secure and never commit it to version control");
     }
 
     private function configureClaudeAI()

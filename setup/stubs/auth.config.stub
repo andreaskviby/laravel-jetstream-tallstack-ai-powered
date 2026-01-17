@@ -18,6 +18,7 @@ return [
         'expires_in' => env('OTP_EXPIRES_IN', 10), // minutes
         'prefill_local' => env('OTP_PREFILL_LOCAL', false),
         'default_code' => env('OTP_DEFAULT_CODE', '123456'),
+        'email_view' => env('OTP_EMAIL_VIEW', 'emails.otp'), // configurable email template
     ],
 
 ];
