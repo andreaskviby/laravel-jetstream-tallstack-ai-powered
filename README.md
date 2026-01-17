@@ -272,15 +272,22 @@ php setup/UltimateInstaller.php
 # Clean reinstall (backs up existing project and reinstalls fresh)
 php setup/UltimateInstaller.php --clean
 
+# Update to latest version and reinstall
+php setup/UltimateInstaller.php --update
+
 # Show help
 php setup/UltimateInstaller.php --help
 ```
 
-The `--clean` flag is useful for developers testing the installer. It will:
-1. Detect if the project directory already exists
-2. Ask for confirmation
-3. Backup the existing project to `{name}_backup_{timestamp}`
-4. Perform a fresh installation
+**Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--clean` | Backup existing project and reinstall fresh |
+| `--update` | Pull latest from git, then clean reinstall |
+| `--help` | Show help message |
+
+The installer automatically checks for updates on startup and prompts you if a newer version is available.
 
 ### Option 2: Curl Install (Fresh Laravel)
 

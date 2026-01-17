@@ -21,6 +21,7 @@ class UltimateInstaller
     private string $projectPath = '';
     private float $startTime;
     private bool $cleanInstall = false;
+    private bool $updateFirst = false;
     private ?string $landingPageTempFile = null;
     private ?string $landingPageLogFile = null;
     private $landingPageProcess = null;
@@ -45,6 +46,11 @@ class UltimateInstaller
             $this->cleanInstall = true;
         }
 
+        if (in_array('--update', $argv ?? [], true)) {
+            $this->updateFirst = true;
+            $this->cleanInstall = true; // Update implies clean
+        }
+
         // Show help if requested
         if (in_array('--help', $argv ?? [], true) || in_array('-h', $argv ?? [], true)) {
             $this->showHelp();
@@ -63,10 +69,80 @@ class UltimateInstaller
         echo "Usage: php setup/UltimateInstaller.php [options]\n\n";
         echo "Options:\n";
         echo "  --clean    Backup existing project and reinstall fresh\n";
+        echo "  --update   Pull latest from git and reinstall (implies --clean)\n";
         echo "  --help     Show this help message\n\n";
         echo "Examples:\n";
         echo "  php setup/UltimateInstaller.php\n";
-        echo "  php setup/UltimateInstaller.php --clean\n\n";
+        echo "  php setup/UltimateInstaller.php --clean\n";
+        echo "  php setup/UltimateInstaller.php --update\n\n";
+    }
+
+    /**
+     * Check for updates and handle --update flag
+     */
+    private function checkForUpdates(): void
+    {
+        $installerDir = dirname(__DIR__);
+
+        // Check if we're in a git repository
+        if (!is_dir("{$installerDir}/.git")) {
+            return; // Not a git repo, skip update check
+        }
+
+        // If --update flag was passed, pull latest changes
+        if ($this->updateFirst) {
+            $this->ui->info("Updating installer from git...");
+            echo "\n";
+
+            // Fetch latest from remote
+            exec("cd " . escapeshellarg($installerDir) . " && git fetch origin 2>&1", $fetchOutput, $fetchCode);
+
+            if ($fetchCode !== 0) {
+                $this->ui->warning("Could not fetch from remote. Continuing with current version.");
+                return;
+            }
+
+            // Pull latest changes
+            exec("cd " . escapeshellarg($installerDir) . " && git pull origin main 2>&1", $pullOutput, $pullCode);
+
+            if ($pullCode === 0) {
+                $this->ui->success("Installer updated to latest version!");
+                echo "  " . implode("\n  ", array_slice($pullOutput, -3)) . "\n\n";
+
+                // Re-execute the installer with same args (minus --update to prevent loop)
+                global $argv;
+                $args = array_filter($argv, fn($arg) => $arg !== '--update');
+                $command = PHP_BINARY . " " . implode(" ", array_map('escapeshellarg', $args));
+                passthru($command);
+                exit(0);
+            }
+
+            $this->ui->warning("Pull failed - you may have local changes. Continuing with current version.");
+            echo "  " . implode("\n  ", $pullOutput) . "\n\n";
+            return;
+        }
+
+        // Check if there are updates available (quick check without --update flag)
+        exec("cd " . escapeshellarg($installerDir) . " && git fetch origin --dry-run 2>&1", $output, $returnCode);
+
+        if ($returnCode === 0) {
+            // Check if local is behind remote
+            exec("cd " . escapeshellarg($installerDir) . " && git rev-list HEAD...origin/main --count 2>/dev/null", $behindOutput, $behindCode);
+
+            if ($behindCode === 0 && isset($behindOutput[0]) && (int)$behindOutput[0] > 0) {
+                $count = (int)$behindOutput[0];
+                echo "\n";
+                $this->ui->warning("A newer version of the installer is available! ({$count} commits behind)");
+                echo "  Run with --update flag to get the latest version:\n";
+                echo "  php setup/UltimateInstaller.php --update\n\n";
+
+                if ($this->ui->confirm("Would you like to update now?", true)) {
+                    $this->updateFirst = true;
+                    $this->checkForUpdates(); // Recurse with update flag set
+                    return;
+                }
+            }
+        }
     }
 
     /**
@@ -75,6 +151,9 @@ class UltimateInstaller
     public function run(): void
     {
         try {
+            // Check for updates and handle --update flag
+            $this->checkForUpdates();
+
             // Phase 0: Claude Code Verification (REQUIRED)
             $this->phase0ClaudeCodeVerification();
 
