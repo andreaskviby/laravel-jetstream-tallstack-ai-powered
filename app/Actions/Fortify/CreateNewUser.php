@@ -33,8 +33,17 @@ class CreateNewUser implements CreatesNewUsers
                 'name' => $input['name'],
                 'email' => $input['email'],
                 'password' => Hash::make($input['password']),
-            ]), function (User $user) {
-                $this->createTeam($user);
+            ]), function (User $user) use ($input) {
+                // Check if the user has pending team invitations
+                $invitations = Jetstream::teamInvitationModel()::where('email', $input['email'])->get();
+                
+                if ($invitations->isNotEmpty()) {
+                    // If user has pending invitations, accept them and skip personal team creation
+                    $this->acceptPendingInvitations($user, $invitations);
+                } else {
+                    // Otherwise, create a personal team
+                    $this->createTeam($user);
+                }
             });
         });
     }
@@ -49,5 +58,26 @@ class CreateNewUser implements CreatesNewUsers
             'name' => explode(' ', $user->name, 2)[0]."'s Team",
             'personal_team' => true,
         ]));
+    }
+
+    /**
+     * Accept all pending team invitations for the user.
+     */
+    protected function acceptPendingInvitations(User $user, $invitations): void
+    {
+        foreach ($invitations as $invitation) {
+            // Add the user to the team
+            $invitation->team->users()->attach($user, ['role' => $invitation->role]);
+            
+            // Delete the invitation
+            $invitation->delete();
+        }
+        
+        // Set the user's current team to the first team they were invited to
+        if ($invitations->isNotEmpty()) {
+            $user->forceFill([
+                'current_team_id' => $invitations->first()->team_id,
+            ])->save();
+        }
     }
 }
