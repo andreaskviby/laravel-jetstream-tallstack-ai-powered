@@ -30,6 +30,7 @@ class AliasesListCommand extends Command
         $this->info('═══════════════════════════════════════════════════════════');
         $this->newLine();
 
+        // base_path() is used here as this command runs within Laravel where the helper is always available
         $aliasFile = base_path('aliases.sh');
         
         if (!file_exists($aliasFile)) {
