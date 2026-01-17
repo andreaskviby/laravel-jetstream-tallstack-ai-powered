@@ -132,7 +132,10 @@ OPENAI_MODEL=gpt-4
 - **MCP (Model Context Protocol)**: Context-aware AI development
 - **Laravel Boost**: AI-powered code generation
 
-See [AI Tools Setup Guide](.github/ISSUE_TEMPLATE/) for installation instructions.
+See the AI Tools Setup Guides for installation instructions:
+- [Install Laravel Prism/AI SDK](.github/ISSUE_TEMPLATE/install_laravel_ai_sdk.md)
+- [Install MCP (Model Context Protocol)](.github/ISSUE_TEMPLATE/install_mcp.md)
+- [Install Laravel Boost](.github/ISSUE_TEMPLATE/install_laravel_boost.md)
 
 ### Database Configuration
 
