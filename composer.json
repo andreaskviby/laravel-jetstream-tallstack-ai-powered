@@ -1,9 +1,26 @@
 {
     "name": "andreaskviby/laravel-jetstream-tallstack-ai-powered",
+    "description": "Laravel Jetstream TALL Stack starter kit with AI-powered features, OTP authentication, team branding and enhanced team management",
     "type": "project",
-    "description": "Laravel Jetstream TALL stack with AI-powered features and team branding support",
-    "keywords": ["laravel", "jetstream", "livewire", "tall-stack"],
     "license": "MIT",
+    "keywords": [
+        "laravel",
+        "jetstream",
+        "tall-stack",
+        "livewire",
+        "alpine",
+        "tailwind",
+        "otp",
+        "authentication",
+        "teams",
+        "ai-powered"
+    ],
+    "authors": [
+        {
+            "name": "Andreas Kviby",
+            "email": "andreas@example.com"
+        }
+    ],
     "require": {
         "php": "^8.2",
         "laravel/framework": "^11.0",
@@ -46,7 +63,8 @@
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
-            "@php artisan migrate --graceful --ansi"
+            "@php artisan migrate --graceful --ansi",
+            "@php setup/installer.php"
         ]
     },
     "extra": {
@@ -54,6 +72,8 @@
             "dont-discover": []
         }
     },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
@@ -62,7 +82,5 @@
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
         }
-    },
-    "minimum-stability": "stable",
-    "prefer-stable": true
+    }
 }

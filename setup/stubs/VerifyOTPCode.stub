@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Actions\Fortify;
+
+use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+
+class VerifyOTPCode
+{
+    /**
+     * Verify the OTP code for the given user.
+     *
+     * @param  \App\Models\User  $user
+     * @param  string  $code
+     * @return bool
+     */
+    public function __invoke(User $user, string $code): bool
+    {
+        $storedCode = Cache::get("otp:{$user->id}");
+        
+        if ($storedCode === null) {
+            return false;
+        }
+        
+        if ($storedCode !== $code) {
+            return false;
+        }
+        
+        // Clear the code after successful verification
+        Cache::forget("otp:{$user->id}");
+        
+        return true;
+    }
+}
