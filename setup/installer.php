@@ -385,7 +385,8 @@ class Installer
         // Copy migration
         $migrationStub = $stubsDir . '/create_todos_table.stub';
         if (file_exists($migrationStub)) {
-            $timestamp = date('Y_m_d_His');
+            // Use microseconds to avoid timestamp conflicts
+            $timestamp = date('Y_m_d_His') . substr((string) microtime(), 2, 6);
             $migrationFile = $migrationsDir . "/{$timestamp}_create_todos_table.php";
             copy($migrationStub, $migrationFile);
             $this->printSuccess("Todo migration created");

@@ -72,7 +72,7 @@ class TodoUpdate extends Command
             }
         }
 
-        if ($this->option('context') !== null) {
+        if ($this->hasOption('context') && $this->option('context') !== null) {
             $updates['context'] = $this->option('context');
         }
 

@@ -29,7 +29,9 @@ class TodoList extends Command
      */
     public function handle(): int
     {
-        $query = Todo::query()->orderBy('priority', 'desc')->orderBy('created_at', 'desc');
+        $query = Todo::query()
+            ->orderByRaw("CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END")
+            ->orderBy('created_at', 'desc');
 
         // Apply filters
         if ($status = $this->option('status')) {
