@@ -1,28 +1,42 @@
 # Laravel Jetstream TALL Stack AI-Powered Starter Kit
 
-A comprehensive starter kit for quickly bootstrapping Laravel projects with Jetstream, TALL stack (Tailwind, Alpine.js, Livewire, Laravel), OTP authentication, team management, and AI-powered features.
+A comprehensive starter kit for quickly bootstrapping Laravel projects with Jetstream, TALL stack (Tailwind, Alpine.js, Livewire, Laravel), OTP authentication, team management with branding, and AI-powered features.
 
 ## Features
 
-✨ **Modern Tech Stack**
+### Modern Tech Stack
 - Laravel 11+ (latest stable version)
 - Laravel Jetstream with Livewire
 - TALL Stack (Tailwind CSS, Alpine.js, Livewire, Laravel)
 - Team management with enhanced invitations
 - OTP (One-Time Password) authentication instead of traditional passwords
 
-🔐 **Security & Authentication**
+### Security & Authentication
 - OTP-based authentication system
 - Prefilled OTP codes for local development (123456)
 - Secure team invitation system
 - Built-in security best practices
 
-🤖 **AI Integration**
+### AI Integration
 - Claude AI API integration ready
 - OAuth login support for Claude
 - Pre-configured for AI-powered features
 
-⚡ **Developer Experience**
+### Team Branding
+Custom branding features for each team:
+
+- **Custom Team Logo**: Upload and manage custom logos for each team
+  - Support for image uploads (JPG, PNG, GIF, SVG)
+  - Maximum file size: 1MB
+  - Automatic storage management with easy logo deletion
+
+- **Brand Colors**: Set primary and secondary brand colors for your team
+  - Primary Color: Main brand color for your team
+  - Secondary Color: Complementary brand color
+  - Hex color code validation (e.g., #FF5733)
+  - Color picker UI for easy selection
+
+### Developer Experience
 - Interactive installation wizard
 - Automatic database setup (MySQL or SQLite)
 - Laravel Herd mail configuration support
@@ -38,7 +52,7 @@ Install directly from the command line:
 curl -s https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/main/install.sh | bash -s -- my-project
 ```
 
-> **Note**: The installation script downloads and executes code. Always review scripts before running them. You can inspect the script at: https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/blob/main/install.sh
+> **Note**: The installation script downloads and executes code. Always review scripts before running them.
 
 Or download and run:
 
@@ -60,7 +74,7 @@ cd my-project
 The installer will guide you through:
 
 1. **Database Selection**: Choose between MySQL or SQLite
-2. **Database Configuration**: 
+2. **Database Configuration**:
    - For MySQL: Create new or connect to existing database
    - Enter credentials (host, port, username, password)
    - For SQLite: Automatic file creation
@@ -77,6 +91,13 @@ cd my-project
 
 # Run database migrations
 php artisan migrate
+
+# Link storage
+php artisan storage:link
+
+# Build assets
+npm install
+npm run build
 
 # Start the development server
 php artisan serve
@@ -113,13 +134,7 @@ CLAUDE_MODEL=claude-3-5-sonnet-20241022
 
 ### Database Configuration
 
-**SQLite** (default for quick start):
-```env
-DB_CONNECTION=sqlite
-DB_DATABASE=/absolute/path/to/database.sqlite
-```
-
-**MySQL**:
+**MySQL** (recommended for production):
 ```env
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -129,23 +144,27 @@ DB_USERNAME=your_username
 DB_PASSWORD=your_password
 ```
 
-## Project Structure
+## Usage
 
-```
-├── setup/
-│   ├── installer.php           # Main installation script
-│   └── stubs/                  # Template files
-│       ├── SendOTPCode.stub    # OTP sending action
-│       ├── VerifyOTPCode.stub  # OTP verification action
-│       ├── auth.config.stub    # Auth configuration
-│       ├── otp-email.stub      # OTP email template
-│       └── login.blade.stub    # OTP login view
-├── install.sh                  # Curl installer script
-├── composer.json              # Composer configuration
-└── README.md                  # This file
-```
+### Team Settings
 
-## Features in Detail
+Navigate to your team settings page to access the branding options. You can:
+
+1. **Upload a Team Logo**:
+   - Click "Select A New Logo"
+   - Choose an image file (max 1MB)
+   - Preview the logo before saving
+   - Click "Save" to apply changes
+
+2. **Set Brand Colors**:
+   - Use the color picker or enter hex codes directly
+   - Primary color: Main brand identity color
+   - Secondary color: Complementary color
+   - Click "Save" to apply changes
+
+3. **Remove Logo**:
+   - Click "Remove Logo" to delete the current team logo
+   - Changes are saved immediately
 
 ### Teams Management
 
@@ -154,6 +173,7 @@ Built on Laravel Jetstream's team features with enhancements:
 - Invite team members with enhanced invitation system
 - Role-based permissions
 - Team switching
+- Custom branding per team
 
 ### OTP Authentication
 
@@ -171,6 +191,29 @@ Full integration of the TALL stack:
 - **Alpine.js**: Minimal JavaScript framework
 - **Livewire**: Full-stack framework for Laravel
 - **Laravel**: The PHP framework for web artisans
+
+## Technical Implementation
+
+### Database Schema
+
+The team branding feature adds three columns to the `teams` table:
+- `logo_path` (string, nullable): Stores the path to the uploaded team logo
+- `primary_color` (string, nullable): Stores the team's primary brand color (hex code)
+- `secondary_color` (string, nullable): Stores the team's secondary brand color (hex code)
+
+### Components
+
+- **UpdateTeamBrandingForm**: Livewire component for managing team branding
+  - Logo upload with file validation
+  - Color selection with hex code validation
+  - Real-time preview of logo changes
+  - Logo deletion functionality
+
+### Models
+
+- **Team Model**: Extended with branding attributes
+  - `logo_path`, `primary_color`, `secondary_color` are mass assignable
+  - `logo_url` accessor provides the full URL to the team logo
 
 ## Requirements
 
@@ -193,6 +236,11 @@ npm run dev
 
 ```bash
 php artisan test
+```
+
+Or run specific feature tests:
+```bash
+php artisan test --filter UpdateTeamBrandingTest
 ```
 
 ### Code Style
@@ -229,8 +277,6 @@ All views use Tailwind CSS. Customize the theme in:
 ```bash
 mysql -u your_username -p
 ```
-
-**SQLite**: Ensure the database file path is absolute and writable.
 
 ### OTP Not Working
 
@@ -270,4 +316,4 @@ Built with:
 
 ---
 
-Made with ❤️ for the Laravel community
+Made with love for the Laravel community
