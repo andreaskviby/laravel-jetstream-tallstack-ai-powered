@@ -4,7 +4,6 @@ namespace App\Http\Livewire\Teams;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Laravel\Jetstream\Contracts\UpdatesTeamNames;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 

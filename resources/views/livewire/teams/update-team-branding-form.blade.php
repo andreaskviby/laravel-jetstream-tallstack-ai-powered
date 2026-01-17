@@ -12,9 +12,10 @@
             <!-- Team Logo -->
             <div class="col-span-6 sm:col-span-4">
                 <!-- Logo File Input -->
-                <input type="file" class="hidden"
-                            wire:model="logo"
-                            x-ref="logo" />
+                <input type="file" 
+                       class="hidden"
+                       wire:model="logo"
+                       x-ref="logo" />
 
                 <x-label for="logo" value="{{ __('Team Logo') }}" />
 
@@ -34,7 +35,9 @@
                     </div>
                 @endif
 
-                <x-secondary-button class="mt-2 me-2" type="button" wire:click="$refs.logo.click()">
+                <x-secondary-button class="mt-2 me-2" 
+                                    type="button" 
+                                    x-on:click.prevent="$refs.logo.click()">
                     {{ __('Select A New Logo') }}
                 </x-secondary-button>
 
