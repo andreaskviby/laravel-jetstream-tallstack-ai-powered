@@ -212,9 +212,14 @@ class PayPalSubscriptionController extends Controller
         // Use PayPal REST API to create billing plan
         // This is typically done via PayPal dashboard or once programmatically
         
+        $mode = config('paypal.mode');
+        $baseUrl = $mode === 'sandbox' 
+            ? 'https://api-m.sandbox.paypal.com' 
+            : 'https://api-m.paypal.com';
+        
         $client = new \GuzzleHttp\Client();
         
-        $response = $client->post('https://api-m.sandbox.paypal.com/v1/billing/plans', [
+        $response = $client->post($baseUrl . '/v1/billing/plans', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->getAccessToken(),
                 'Content-Type' => 'application/json',
@@ -258,9 +263,14 @@ class PayPalSubscriptionController extends Controller
     public function subscribe(Request $request)
     {
         // Create subscription
+        $mode = config('paypal.mode');
+        $baseUrl = $mode === 'sandbox' 
+            ? 'https://api-m.sandbox.paypal.com' 
+            : 'https://api-m.paypal.com';
+        
         $client = new \GuzzleHttp\Client();
         
-        $response = $client->post('https://api-m.sandbox.paypal.com/v1/billing/subscriptions', [
+        $response = $client->post($baseUrl . '/v1/billing/subscriptions', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->getAccessToken(),
                 'Content-Type' => 'application/json',
@@ -297,9 +307,14 @@ class PayPalSubscriptionController extends Controller
     {
         $subscriptionId = auth()->user()->paypal_subscription_id;
         
+        $mode = config('paypal.mode');
+        $baseUrl = $mode === 'sandbox' 
+            ? 'https://api-m.sandbox.paypal.com' 
+            : 'https://api-m.paypal.com';
+        
         $client = new \GuzzleHttp\Client();
         
-        $client->post("https://api-m.sandbox.paypal.com/v1/billing/subscriptions/{$subscriptionId}/cancel", [
+        $client->post($baseUrl . "/v1/billing/subscriptions/{$subscriptionId}/cancel", [
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->getAccessToken(),
                 'Content-Type' => 'application/json',
@@ -315,10 +330,14 @@ class PayPalSubscriptionController extends Controller
 
     protected function getAccessToken()
     {
-        $client = new \GuzzleHttp\Client();
         $mode = config('paypal.mode');
+        $baseUrl = $mode === 'sandbox' 
+            ? 'https://api-m.sandbox.paypal.com' 
+            : 'https://api-m.paypal.com';
         
-        $response = $client->post("https://api-m.{$mode}.paypal.com/v1/oauth2/token", [
+        $client = new \GuzzleHttp\Client();
+        
+        $response = $client->post($baseUrl . '/v1/oauth2/token', [
             'auth' => [
                 config("paypal.{$mode}.client_id"),
                 config("paypal.{$mode}.client_secret"),

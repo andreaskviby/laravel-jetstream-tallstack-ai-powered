@@ -207,6 +207,7 @@ class LemonSqueezyPaymentController extends Controller
 
     @push('scripts')
     <script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
+    <!-- Note: Lemon Squeezy loads from their CDN. Always use HTTPS and verify the domain. -->
     <script>
         function openCheckout() {
             window.LemonSqueezy.Url.Open('{{ $checkoutUrl }}');

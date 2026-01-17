@@ -226,10 +226,12 @@ class SocialLoginController extends Controller
 // use App\Http\Controllers\Auth\SocialLoginController;
 //
 // Route::get('auth/{provider}', [SocialLoginController::class, 'redirect'])
-//     ->name('social.redirect');
+//     ->name('social.redirect')
+//     ->where('provider', 'google|facebook|github|twitter');
 //
 // Route::get('auth/{provider}/callback', [SocialLoginController::class, 'callback'])
-//     ->name('social.callback');
+//     ->name('social.callback')
+//     ->where('provider', 'google|facebook|github|twitter');
 
 /**
  * Blade View - Login Page (resources/views/auth/login.blade.php)

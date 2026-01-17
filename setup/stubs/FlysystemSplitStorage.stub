@@ -155,13 +155,20 @@ class FileStorageService
      */
     public function getDisk(string $fileType): string
     {
-        return match($fileType) {
+        $disk = match($fileType) {
             'avatar' => 'avatars',        // Local storage
             'product' => 's3-products',   // S3 public
             'document' => 's3-private',   // S3 private
             'temp' => 'local',            // Temporary files
             default => config('filesystems.default'),
         };
+        
+        // Validate disk exists in configuration
+        if (!array_key_exists($disk, config('filesystems.disks', []))) {
+            throw new \InvalidArgumentException("Disk '{$disk}' is not configured in filesystems.php");
+        }
+        
+        return $disk;
     }
 
     /**
