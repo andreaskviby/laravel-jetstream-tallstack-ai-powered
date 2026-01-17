@@ -262,6 +262,94 @@ The starter kit is designed to be extended:
 - Database connections
 - Frontend asset compilation
 
+## Design Decisions: Optional Features (v1.1)
+
+### 9. Integration Stubs vs. Full Implementation
+
+**Decision**: Provide comprehensive stubs instead of full implementations for optional features.
+
+**Rationale**:
+- **Flexibility**: Users can customize integrations to their needs
+- **Minimal Dependencies**: Keep base installation lightweight
+- **Learning**: Stubs serve as educational resources
+- **Maintenance**: Easier to keep documentation updated than full code
+- **Choice**: Users select only features they need
+
+**Implementation**:
+- Well-documented stub files in `setup/stubs/`
+- Complete code examples with explanations
+- Setup instructions for each feature
+- Best practices and security considerations included
+
+**Features Provided as Stubs**:
+1. **Filament 4**: Admin panel with installation helper
+2. **Payment Gateways**: Stripe, PayPal, Lemon Squeezy
+3. **Social Login**: Laravel Socialite OAuth
+4. **Split Storage**: Flysystem multi-disk configuration
+
+### 10. Feature Comparison Documentation
+
+**Decision**: Create comprehensive comparison with other Laravel starter kits.
+
+**Rationale**:
+- **Transparency**: Help users make informed decisions
+- **Positioning**: Show unique value proposition
+- **Education**: Teach users about available options
+- **Reference**: Quick decision matrix for feature needs
+
+**Implementation**:
+- `FEATURES_COMPARISON.md` with detailed tables
+- Comparison with Breeze, Jetstream, Filament
+- Payment gateway feature matrix
+- Migration guides from other kits
+
+### 11. Modular Payment Integration
+
+**Decision**: Support multiple payment providers through optional stubs.
+
+**Rationale**:
+- **Provider Choice**: Different markets prefer different processors
+- **Feature Comparison**: Users can compare options
+- **No Lock-in**: Easy to switch providers
+- **Complete Examples**: Subscriptions, one-time payments, webhooks
+
+**Providers Supported**:
+- **Stripe**: Most popular, great Laravel support (Cashier)
+- **Lemon Squeezy**: Merchant of Record, handles compliance
+- **PayPal**: Global recognition, alternative to cards
+
+### 12. Social Authentication Strategy
+
+**Decision**: Provide Socialite integration stub with multiple providers.
+
+**Rationale**:
+- **User Convenience**: Many users prefer social login
+- **Reduced Friction**: No password to remember
+- **Trust**: Familiar OAuth providers
+- **Flexibility**: Support multiple providers simultaneously
+
+**Implementation**:
+- Complete controller examples
+- Database migration templates
+- OAuth setup instructions for each provider
+- Security best practices
+
+### 13. Split Storage Architecture
+
+**Decision**: Provide configuration examples for multi-disk storage.
+
+**Rationale**:
+- **Scalability**: Separate local and cloud storage
+- **Cost Optimization**: Store different content on appropriate platforms
+- **Performance**: Use CDN for public assets, local for temporary
+- **Flexibility**: Support multiple cloud providers (S3, Spaces, R2)
+
+**Strategy**:
+- Local storage for avatars and development
+- S3/Cloud for production assets
+- Private disks for sensitive content
+- Storage service helper class
+
 ## Future Enhancements
 
 Planned improvements documented in CHANGELOG.md:
@@ -272,6 +360,7 @@ Planned improvements documented in CHANGELOG.md:
 4. **CI/CD**: GitHub Actions workflows
 5. **Testing**: Comprehensive test suite
 6. **Multi-language**: Internationalization support
+7. **Interactive Installer**: Add optional feature setup to installer wizard
 
 ## Conclusion
 
@@ -280,5 +369,6 @@ The architecture balances:
 - **Flexibility**: Customizable for different needs
 - **Modern practices**: Current best practices and patterns
 - **Developer experience**: Smooth setup and development workflow
+- **Modularity**: Use only the features you need
 
-The design decisions prioritize getting developers productive quickly while providing a solid foundation for production applications.
+The design decisions prioritize getting developers productive quickly while providing a solid foundation for production applications with optional enhancements available through well-documented stubs.

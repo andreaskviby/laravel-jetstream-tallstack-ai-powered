@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Todo;
+use Illuminate\Console\Command;
+
+class TodoUpdate extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'todo:update
+                            {id : The ID of the todo}
+                            {--title= : Update the title}
+                            {--description= : Update the description}
+                            {--priority= : Update the priority (low, medium, high)}
+                            {--status= : Update the status (pending, in_progress, completed)}
+                            {--context= : Update the context}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Update an existing todo item';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $id = $this->argument('id');
+        $todo = Todo::find($id);
+
+        if (!$todo) {
+            $this->error("Todo with ID {$id} not found.");
+            return self::FAILURE;
+        }
+
+        $updates = [];
+
+        if ($title = $this->option('title')) {
+            $updates['title'] = $title;
+        }
+
+        if ($description = $this->option('description')) {
+            $updates['description'] = $description;
+        }
+
+        if ($priority = $this->option('priority')) {
+            if (!in_array($priority, ['low', 'medium', 'high'])) {
+                $this->error('Priority must be one of: low, medium, high');
+                return self::FAILURE;
+            }
+            $updates['priority'] = $priority;
+        }
+
+        if ($status = $this->option('status')) {
+            if (!in_array($status, ['pending', 'in_progress', 'completed'])) {
+                $this->error('Status must be one of: pending, in_progress, completed');
+                return self::FAILURE;
+            }
+            $updates['status'] = $status;
+            
+            if ($status === 'completed' && !$todo->completed_at) {
+                $updates['completed_at'] = now();
+            } elseif ($status !== 'completed') {
+                $updates['completed_at'] = null;
+            }
+        }
+
+        if ($this->hasOption('context') && $this->option('context') !== null) {
+            $updates['context'] = $this->option('context');
+        }
+
+        if (empty($updates)) {
+            $this->warn('No updates provided. Use --title, --description, --priority, --status, or --context options.');
+            return self::FAILURE;
+        }
+
+        $todo->update($updates);
+
+        $this->info("✓ Todo updated successfully!");
+        $this->line("  ID: {$todo->id}");
+        $this->line("  Title: {$todo->title}");
+        $this->line("  Priority: {$todo->priority}");
+        $this->line("  Status: {$todo->status}");
+
+        return self::SUCCESS;
+    }
+}

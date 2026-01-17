@@ -48,11 +48,11 @@ class Installer
         // Publish and configure Jetstream
         $this->configureJetstream();
         
+        // Install Todo management system
+        $this->installTodoManagement();
+        
         // Generate application key
         $this->generateAppKey();
-        
-        // Setup project aliases
-        $this->setupProjectAliases();
         
         // Display summary
         $this->displaySummary();
@@ -340,77 +340,68 @@ class Installer
         $this->printSuccess("Jetstream configured");
     }
 
+    private function installTodoManagement()
+    {
+        $this->printHeader("Installing Todo Management System");
+        
+        $this->printInfo("Installing todo commands and migrations...");
+        
+        $stubsDir = __DIR__ . '/stubs';
+        
+        // Create directories if they don't exist
+        $commandsDir = app_path('Console/Commands');
+        $modelsDir = app_path('Models');
+        $migrationsDir = database_path('migrations');
+        
+        if (!file_exists($commandsDir)) {
+            mkdir($commandsDir, 0755, true);
+        }
+        
+        // Copy Todo model
+        $todoModelStub = $stubsDir . '/Todo.stub';
+        if (file_exists($todoModelStub)) {
+            copy($todoModelStub, $modelsDir . '/Todo.php');
+            $this->printSuccess("Todo model created");
+        }
+        
+        // Copy artisan commands
+        $commands = [
+            'TodoAdd',
+            'TodoList',
+            'TodoUpdate',
+            'TodoComplete',
+            'TodoDelete',
+            'TodoShow',
+        ];
+        
+        foreach ($commands as $command) {
+            $stubFile = $stubsDir . "/{$command}.stub";
+            if (file_exists($stubFile)) {
+                copy($stubFile, $commandsDir . "/{$command}.php");
+            }
+        }
+        $this->printSuccess("Todo commands created (todo:add, todo:list, todo:update, todo:complete, todo:delete, todo:show)");
+        
+        // Copy migration
+        $migrationStub = $stubsDir . '/create_todos_table.stub';
+        if (file_exists($migrationStub)) {
+            // Use microseconds to avoid timestamp conflicts
+            $timestamp = date('Y_m_d_His') . substr((string) microtime(), 2, 6);
+            $migrationFile = $migrationsDir . "/{$timestamp}_create_todos_table.php";
+            copy($migrationStub, $migrationFile);
+            $this->printSuccess("Todo migration created");
+        }
+        
+        $this->config['todo_management'] = true;
+        $this->printSuccess("Todo management system installed successfully");
+        $this->printInfo("Run 'php artisan migrate' to create the todos table");
+    }
+
     private function generateAppKey()
     {
         $this->printInfo("Generating application key...");
         $this->runCommand('php artisan key:generate --no-interaction');
         $this->printSuccess("Application key generated");
-    }
-
-    private function setupProjectAliases()
-    {
-        $this->printHeader("Setting up Project Aliases");
-        
-        $this->printInfo("Installing terminal aliases for convenient command shortcuts...");
-        
-        // Get the stub directory (relative to where this installer is run from)
-        $stubsDir = __DIR__ . '/stubs';
-        
-        // If stubs directory doesn't exist, try downloading from GitHub
-        if (!is_dir($stubsDir)) {
-            $this->printWarning("Stubs directory not found locally. Attempting to download from GitHub...");
-            
-            // Download aliases.sh stub
-            $aliasesStubUrl = 'https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/main/setup/stubs/aliases.sh.stub';
-            $aliasesStubContent = @file_get_contents($aliasesStubUrl);
-            
-            if ($aliasesStubContent === false) {
-                $this->printWarning("Could not download aliases stub. Skipping aliases setup.");
-                return;
-            }
-            
-            // Download command stub
-            $commandStubUrl = 'https://raw.githubusercontent.com/andreaskviby/laravel-jetstream-tallstack-ai-powered/main/setup/stubs/AliasesListCommand.stub';
-            $commandStubContent = @file_get_contents($commandStubUrl);
-            
-            if ($commandStubContent === false) {
-                $this->printWarning("Could not download command stub. Skipping aliases setup.");
-                return;
-            }
-        } else {
-            // Read from local stubs
-            $aliasesStubPath = $stubsDir . '/aliases.sh.stub';
-            $commandStubPath = $stubsDir . '/AliasesListCommand.stub';
-            
-            if (!file_exists($aliasesStubPath) || !file_exists($commandStubPath)) {
-                $this->printWarning("Aliases stubs not found. Skipping aliases setup.");
-                return;
-            }
-            
-            $aliasesStubContent = file_get_contents($aliasesStubPath);
-            $commandStubContent = file_get_contents($commandStubPath);
-        }
-        
-        // Copy aliases.sh to project root
-        $aliasesPath = getcwd() . '/aliases.sh';
-        file_put_contents($aliasesPath, $aliasesStubContent);
-        chmod($aliasesPath, 0755);
-        $this->printSuccess("Created aliases.sh in project root");
-        
-        // Create Console/Commands directory if it doesn't exist
-        $commandsDir = getcwd() . '/app/Console/Commands';
-        if (!is_dir($commandsDir)) {
-            mkdir($commandsDir, 0755, true);
-        }
-        
-        // Copy AliasesListCommand
-        $commandPath = $commandsDir . '/AliasesListCommand.php';
-        file_put_contents($commandPath, $commandStubContent);
-        $this->printSuccess("Created AliasesListCommand.php");
-        
-        $this->config['aliases_installed'] = true;
-        $this->printSuccess("Project aliases installed successfully!");
-        $this->printInfo("Run 'php artisan aliases:list' to see all available aliases");
     }
 
     private function displaySummary()
@@ -432,8 +423,8 @@ class Installer
             echo $this->colorize("✓ Claude AI configured\n", 'green');
         }
         
-        if ($this->config['aliases_installed'] ?? false) {
-            echo $this->colorize("✓ Project aliases installed\n", 'green');
+        if ($this->config['todo_management'] ?? false) {
+            echo $this->colorize("✓ Todo management system installed\n", 'green');
         }
         
         echo "\n";
@@ -451,18 +442,18 @@ class Installer
         echo $this->colorize("   http://localhost:8000\n", 'cyan');
         echo "\n";
         
-        if ($this->config['otp_enabled'] ?? false) {
-            echo "4. For OTP authentication implementation, check:\n";
-            echo $this->colorize("   - app/Actions/Fortify/*\n", 'cyan');
-            echo $this->colorize("   - resources/views/auth/*\n", 'cyan');
+        if ($this->config['todo_management'] ?? false) {
+            echo "4. Try the todo commands:\n";
+            echo $this->colorize("   php artisan todo:add \"Your first todo\"\n", 'cyan');
+            echo $this->colorize("   php artisan todo:list\n", 'cyan');
             echo "\n";
         }
         
-        if ($this->config['aliases_installed'] ?? false) {
-            $nextStep = ($this->config['otp_enabled'] ?? false) ? "5" : "4";
-            echo "{$nextStep}. Load project aliases for convenient shortcuts:\n";
-            echo $this->colorize("   source aliases.sh\n", 'cyan');
-            echo $this->colorize("   php artisan aliases:list\n", 'cyan');
+        if ($this->config['otp_enabled'] ?? false) {
+            $step = ($this->config['todo_management'] ?? false) ? "5" : "4";
+            echo "{$step}. For OTP authentication implementation, check:\n";
+            echo $this->colorize("   - app/Actions/Fortify/*\n", 'cyan');
+            echo $this->colorize("   - resources/views/auth/*\n", 'cyan');
             echo "\n";
         }
         

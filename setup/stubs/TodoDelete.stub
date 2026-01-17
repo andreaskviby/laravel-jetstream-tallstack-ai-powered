@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Todo;
+use Illuminate\Console\Command;
+
+class TodoDelete extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'todo:delete
+                            {id : The ID of the todo to delete}
+                            {--force : Skip confirmation}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Delete a todo item';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $id = $this->argument('id');
+        $todo = Todo::find($id);
+
+        if (!$todo) {
+            $this->error("Todo with ID {$id} not found.");
+            return self::FAILURE;
+        }
+
+        // Show todo details
+        $this->info("Todo to delete:");
+        $this->line("  ID: {$todo->id}");
+        $this->line("  Title: {$todo->title}");
+        $this->line("  Status: {$todo->status}");
+
+        // Confirm deletion unless --force is used
+        if (!$this->option('force')) {
+            if (!$this->confirm('Are you sure you want to delete this todo?', false)) {
+                $this->info('Deletion cancelled.');
+                return self::SUCCESS;
+            }
+        }
+
+        $todo->delete();
+
+        $this->info("✓ Todo deleted successfully!");
+
+        return self::SUCCESS;
+    }
+}

@@ -1,0 +1,61 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Filament 4 Installation Helper
+ * 
+ * This script installs and configures Filament 4 admin panel
+ * for Laravel Jetstream TALL Stack applications.
+ * 
+ * Installation: Run this script after main Laravel setup
+ * php setup/stubs/filament-install.stub
+ */
+
+echo "\033[1;36m";
+echo "╔══════════════════════════════════════════════════════════╗\n";
+echo "║          Filament 4 Installation & Setup                 ║\n";
+echo "╚══════════════════════════════════════════════════════════╝\n";
+echo "\033[0m\n";
+
+// Check if we're in a Laravel project
+if (!file_exists('composer.json')) {
+    echo "\033[0;31m✗ Error: Not a Laravel project directory\033[0m\n";
+    exit(1);
+}
+
+echo "\033[1;33m➜ Installing Filament 4 packages...\033[0m\n";
+passthru('composer require filament/filament:"^4.0" -W');
+
+echo "\n\033[1;33m➜ Running Filament installation...\033[0m\n";
+passthru('php artisan filament:install --panels');
+
+echo "\n\033[1;33m➜ Creating admin user...\033[0m\n";
+echo "Please provide admin user details:\n";
+
+// Get admin details
+echo "Name: ";
+$name = trim(fgets(STDIN));
+
+echo "Email: ";
+$email = trim(fgets(STDIN));
+
+echo "Password: ";
+$password = trim(fgets(STDIN));
+
+// Create admin user
+passthru("php artisan make:filament-user --name=\"{$name}\" --email=\"{$email}\" --password=\"{$password}\"");
+
+echo "\n\033[1;32m✓ Filament 4 installed successfully!\033[0m\n";
+echo "\n\033[1;36mNext steps:\033[0m\n";
+echo "1. Visit /admin to access your admin panel\n";
+echo "2. Login with your admin credentials\n";
+echo "3. Create resources: php artisan make:filament-resource ModelName\n";
+echo "4. Read docs: https://filamentphp.com/docs\n\n";
+
+echo "\033[1;36mOptional plugins:\033[0m\n";
+echo "- Tables: Already included\n";
+echo "- Forms: Already included\n";
+echo "- Notifications: Already included\n";
+echo "- Shield (permissions): composer require bezhansalleh/filament-shield\n";
+echo "- Spatie Media Library: composer require filament/spatie-laravel-media-library-plugin\n";
+echo "- Excel Export: composer require pxlrbt/filament-excel\n\n";

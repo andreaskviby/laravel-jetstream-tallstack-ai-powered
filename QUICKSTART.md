@@ -122,8 +122,20 @@ Once logged in, you can:
 - ✅ Create and manage teams
 - ✅ Invite team members
 - ✅ Manage your profile
-- ✅ Use AI-powered features (if configured)
+- ✅ Use AI-powered landing page generator (if Claude API configured)
+- ✅ Generate landing pages from SaaS ideas
 - ✅ Switch between teams
+
+### 7. Try the AI Landing Page Generator
+
+1. Click "AI Landing Pages" in the navigation menu
+2. Click "New Task"
+3. Describe your SaaS idea in detail
+4. Click "Create & Generate"
+5. Wait for AI to generate your landing page (10-30 seconds)
+6. View the result and copy the HTML code
+
+**Example**: "TaskFlow Pro is a project management tool for remote teams..."
 
 ## OTP Authentication
 
