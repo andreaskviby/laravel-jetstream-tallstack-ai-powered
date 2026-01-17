@@ -1,0 +1,332 @@
+<?php
+
+/**
+ * Lemon Squeezy Payment Integration
+ * 
+ * This stub provides a starting point for integrating Lemon Squeezy payments
+ * into your Laravel application using the official package.
+ * 
+ * Installation:
+ * 1. Run: composer require lemonsqueezy/laravel
+ * 2. Publish config: php artisan vendor:publish --tag="lemon-squeezy-config"
+ * 3. Run migrations: php artisan migrate
+ * 4. Configure .env with Lemon Squeezy keys
+ */
+
+namespace App\Models;
+
+use LemonSqueezy\Laravel\Billable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+class User extends Authenticatable
+{
+    use Billable; // Add this trait to enable Lemon Squeezy features
+
+    // ... rest of your User model
+}
+
+/**
+ * Environment Configuration (.env)
+ * 
+ * Add these to your .env file:
+ * 
+ * LEMON_SQUEEZY_API_KEY=your_api_key
+ * LEMON_SQUEEZY_STORE_ID=your_store_id
+ * LEMON_SQUEEZY_SIGNING_SECRET=your_webhook_secret
+ */
+
+/**
+ * Example: Creating a Subscription Checkout
+ */
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use LemonSqueezy\Laravel\Checkout;
+
+class LemonSqueezySubscriptionController extends Controller
+{
+    public function subscribe(Request $request)
+    {
+        $user = $request->user();
+        
+        // Create a checkout session
+        $checkout = $user->checkout('variant_id_here')
+            ->returnTo(route('dashboard'))
+            ->embed()
+            ->create();
+            
+        return view('subscription.checkout', [
+            'checkoutUrl' => $checkout->url(),
+        ]);
+    }
+    
+    public function subscriptionStatus(Request $request)
+    {
+        $user = $request->user();
+        
+        // Check if user is subscribed
+        if ($user->subscribed()) {
+            $subscription = $user->subscription();
+            
+            return view('subscription.status', [
+                'subscription' => $subscription,
+                'isActive' => $subscription->active(),
+                'onTrial' => $subscription->onTrial(),
+                'cancelled' => $subscription->cancelled(),
+            ]);
+        }
+        
+        return redirect()->route('subscribe');
+    }
+    
+    public function cancel(Request $request)
+    {
+        $user = $request->user();
+        
+        if ($user->subscribed()) {
+            $user->subscription()->cancel();
+        }
+        
+        return redirect()->route('dashboard')
+            ->with('success', 'Subscription will be cancelled at the end of the billing period.');
+    }
+    
+    public function resume(Request $request)
+    {
+        $user = $request->user();
+        
+        if ($user->subscribed() && $user->subscription()->cancelled()) {
+            $user->subscription()->resume();
+        }
+        
+        return redirect()->route('dashboard')
+            ->with('success', 'Subscription resumed successfully.');
+    }
+}
+
+/**
+ * Example: One-Time Payment Checkout
+ */
+class LemonSqueezyPaymentController extends Controller
+{
+    public function createCheckout(Request $request)
+    {
+        $user = $request->user();
+        
+        // Create one-time payment checkout
+        $checkout = $user->checkout('product_variant_id')
+            ->returnTo(route('thank-you'))
+            ->overlay()
+            ->create();
+            
+        return response()->json([
+            'checkoutUrl' => $checkout->url(),
+        ]);
+    }
+    
+    public function orders(Request $request)
+    {
+        $user = $request->user();
+        
+        // Get all orders
+        $orders = $user->orders;
+        
+        return view('billing.orders', compact('orders'));
+    }
+}
+
+/**
+ * Routes (routes/web.php)
+ */
+// use App\Http\Controllers\LemonSqueezySubscriptionController;
+// use App\Http\Controllers\LemonSqueezyPaymentController;
+
+// Route::middleware(['auth'])->group(function () {
+//     // Subscription routes
+//     Route::get('/subscribe', [LemonSqueezySubscriptionController::class, 'subscribe'])->name('subscribe');
+//     Route::get('/subscription/status', [LemonSqueezySubscriptionController::class, 'subscriptionStatus'])->name('subscription.status');
+//     Route::post('/subscription/cancel', [LemonSqueezySubscriptionController::class, 'cancel'])->name('subscription.cancel');
+//     Route::post('/subscription/resume', [LemonSqueezySubscriptionController::class, 'resume'])->name('subscription.resume');
+//     
+//     // One-time payment routes
+//     Route::post('/checkout', [LemonSqueezyPaymentController::class, 'createCheckout'])->name('checkout.create');
+//     Route::get('/orders', [LemonSqueezyPaymentController::class, 'orders'])->name('orders');
+// });
+
+/**
+ * Webhook Handler (Automatic)
+ * 
+ * The package automatically handles webhooks. Just configure the webhook URL
+ * in your Lemon Squeezy dashboard:
+ * 
+ * https://yourapp.com/lemon-squeezy/webhook
+ * 
+ * The package will handle:
+ * - subscription_created
+ * - subscription_updated
+ * - subscription_cancelled
+ * - subscription_resumed
+ * - subscription_expired
+ * - subscription_paused
+ * - subscription_unpaused
+ * - order_created
+ * - order_refunded
+ * - license_key_created
+ */
+
+/**
+ * Blade View Example (resources/views/subscription/checkout.blade.php)
+ */
+?>
+{{-- <x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            Subscribe to Premium
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
+                <div class="text-center">
+                    <h3 class="text-2xl font-bold mb-4">Premium Plan</h3>
+                    <p class="text-gray-600 mb-6">Get access to all premium features</p>
+                    
+                    <div class="text-4xl font-bold mb-6">
+                        $9.99<span class="text-lg text-gray-600">/month</span>
+                    </div>
+                    
+                    <button onclick="openCheckout()" 
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
+                        Subscribe Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
+    <script>
+        function openCheckout() {
+            window.LemonSqueezy.Url.Open('{{ $checkoutUrl }}');
+        }
+
+        // Handle successful checkout
+        window.addEventListener('lemonSqueezyCheckoutSuccess', (event) => {
+            console.log('Checkout success:', event.detail);
+            window.location.href = '{{ route('dashboard') }}';
+        });
+    </script>
+    @endpush
+</x-app-layout> --}}
+
+<?php
+/**
+ * Checking Subscription Status in Blade
+ */
+// @if (auth()->user()->subscribed())
+//     {{-- User has an active subscription --}}
+//     @if (auth()->user()->subscription()->onTrial())
+//         <p>You are on a trial until {{ auth()->user()->subscription()->trial_ends_at->format('M d, Y') }}</p>
+//     @endif
+//     
+//     @if (auth()->user()->subscription()->cancelled())
+//         <p>Your subscription will end on {{ auth()->user()->subscription()->ends_at->format('M d, Y') }}</p>
+//     @endif
+// @else
+//     {{-- User is not subscribed --}}
+//     <a href="{{ route('subscribe') }}">Subscribe Now</a>
+// @endif
+
+/**
+ * Advanced Features
+ */
+class AdvancedLemonSqueezyController extends Controller
+{
+    // Prefill checkout with user data
+    public function prefillCheckout(Request $request)
+    {
+        $user = $request->user();
+        
+        $checkout = $user->checkout('variant_id')
+            ->withData([
+                'email' => $user->email,
+                'name' => $user->name,
+                'billing_address' => [
+                    'country' => 'US',
+                    'zip' => '12345',
+                ],
+            ])
+            ->create();
+            
+        return response()->json(['checkoutUrl' => $checkout->url()]);
+    }
+    
+    // Create checkout with discount
+    public function checkoutWithDiscount(Request $request)
+    {
+        $user = $request->user();
+        
+        $checkout = $user->checkout('variant_id')
+            ->withDiscount('discount_code_here')
+            ->create();
+            
+        return response()->json(['checkoutUrl' => $checkout->url()]);
+    }
+    
+    // Get customer portal URL
+    public function customerPortal(Request $request)
+    {
+        $user = $request->user();
+        
+        if ($user->subscribed()) {
+            $portalUrl = $user->subscription()->customerPortalUrl();
+            return redirect($portalUrl);
+        }
+        
+        return redirect()->route('subscribe');
+    }
+}
+
+/**
+ * Configuration (config/lemon-squeezy.php)
+ * 
+ * After publishing, customize:
+ */
+// return [
+//     'api_key' => env('LEMON_SQUEEZY_API_KEY'),
+//     'store_id' => env('LEMON_SQUEEZY_STORE_ID'),
+//     'signing_secret' => env('LEMON_SQUEEZY_SIGNING_SECRET'),
+//     
+//     // Model to use for billable entities
+//     'billable_model' => \App\Models\User::class,
+//     
+//     // Redirect URL after successful checkout
+//     'redirect_url' => '/dashboard',
+// ];
+
+/**
+ * Testing
+ * 
+ * Lemon Squeezy provides test mode:
+ * 1. Enable test mode in Lemon Squeezy dashboard
+ * 2. Use test API keys
+ * 3. Test cards are processed as successful
+ * 4. No real charges are made
+ * 
+ * Test card: Any valid card format (e.g., 4242 4242 4242 4242)
+ */
+
+/**
+ * Advantages of Lemon Squeezy:
+ * 
+ * ✅ Merchant of Record (handles tax, compliance)
+ * ✅ Global payments support
+ * ✅ Software licensing built-in
+ * ✅ Easy setup and integration
+ * ✅ Customer portal included
+ * ✅ Supports multiple payment methods
+ * ✅ Automatic tax calculation
+ * ✅ Invoice generation
+ */

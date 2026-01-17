@@ -1,0 +1,438 @@
+<?php
+
+/**
+ * PayPal Payment Integration
+ * 
+ * This stub provides a starting point for integrating PayPal payments
+ * into your Laravel application.
+ * 
+ * Installation:
+ * 1. Run: composer require paypal/rest-api-sdk-php
+ * 2. Configure .env with PayPal credentials
+ * 3. Create controllers and routes
+ */
+
+/**
+ * Environment Configuration (.env)
+ * 
+ * Add these to your .env file:
+ * 
+ * PAYPAL_MODE=sandbox # or 'live' for production
+ * PAYPAL_SANDBOX_CLIENT_ID=your_sandbox_client_id
+ * PAYPAL_SANDBOX_CLIENT_SECRET=your_sandbox_client_secret
+ * PAYPAL_LIVE_CLIENT_ID=your_live_client_id
+ * PAYPAL_LIVE_CLIENT_SECRET=your_live_client_secret
+ */
+
+/**
+ * Configuration File (config/paypal.php)
+ * 
+ * Create this file:
+ */
+// <?php
+// return [
+//     'mode' => env('PAYPAL_MODE', 'sandbox'),
+//     'sandbox' => [
+//         'client_id' => env('PAYPAL_SANDBOX_CLIENT_ID'),
+//         'client_secret' => env('PAYPAL_SANDBOX_CLIENT_SECRET'),
+//     ],
+//     'live' => [
+//         'client_id' => env('PAYPAL_LIVE_CLIENT_ID'),
+//         'client_secret' => env('PAYPAL_LIVE_CLIENT_SECRET'),
+//     ],
+//     'currency' => env('PAYPAL_CURRENCY', 'USD'),
+// ];
+
+/**
+ * PayPal Service Provider
+ */
+namespace App\Services;
+
+use PayPal\Rest\ApiContext;
+use PayPal\Auth\OAuthTokenCredential;
+
+class PayPalService
+{
+    protected $apiContext;
+
+    public function __construct()
+    {
+        $mode = config('paypal.mode');
+        
+        $this->apiContext = new ApiContext(
+            new OAuthTokenCredential(
+                config("paypal.{$mode}.client_id"),
+                config("paypal.{$mode}.client_secret")
+            )
+        );
+
+        $this->apiContext->setConfig([
+            'mode' => $mode,
+            'log.LogEnabled' => true,
+            'log.FileName' => storage_path('logs/paypal.log'),
+            'log.LogLevel' => 'DEBUG',
+        ]);
+    }
+
+    public function getApiContext()
+    {
+        return $this->apiContext;
+    }
+}
+
+/**
+ * PayPal Controller - One-Time Payments
+ */
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use PayPal\Api\Amount;
+use PayPal\Api\Item;
+use PayPal\Api\ItemList;
+use PayPal\Api\Payer;
+use PayPal\Api\Payment;
+use PayPal\Api\PaymentExecution;
+use PayPal\Api\RedirectUrls;
+use PayPal\Api\Transaction;
+use App\Services\PayPalService;
+
+class PayPalPaymentController extends Controller
+{
+    protected $paypalService;
+
+    public function __construct(PayPalService $paypalService)
+    {
+        $this->paypalService = $paypalService;
+    }
+
+    public function createPayment(Request $request)
+    {
+        $payer = new Payer();
+        $payer->setPaymentMethod('paypal');
+
+        $item = new Item();
+        $item->setName('Product Name')
+            ->setCurrency('USD')
+            ->setQuantity(1)
+            ->setPrice($request->amount);
+
+        $itemList = new ItemList();
+        $itemList->setItems([$item]);
+
+        $amount = new Amount();
+        $amount->setCurrency('USD')
+            ->setTotal($request->amount);
+
+        $transaction = new Transaction();
+        $transaction->setAmount($amount)
+            ->setItemList($itemList)
+            ->setDescription('Payment description')
+            ->setInvoiceNumber(uniqid());
+
+        $redirectUrls = new RedirectUrls();
+        $redirectUrls->setReturnUrl(route('paypal.success'))
+            ->setCancelUrl(route('paypal.cancel'));
+
+        $payment = new Payment();
+        $payment->setIntent('sale')
+            ->setPayer($payer)
+            ->setRedirectUrls($redirectUrls)
+            ->setTransactions([$transaction]);
+
+        try {
+            $payment->create($this->paypalService->getApiContext());
+            
+            // Store payment ID in session
+            session(['paypal_payment_id' => $payment->getId()]);
+            
+            return redirect($payment->getApprovalLink());
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'PayPal payment failed: ' . $e->getMessage());
+        }
+    }
+
+    public function executePayment(Request $request)
+    {
+        $paymentId = session('paypal_payment_id');
+        
+        if (!$paymentId) {
+            return redirect()->route('home')
+                ->with('error', 'Payment ID not found');
+        }
+
+        $payment = Payment::get($paymentId, $this->paypalService->getApiContext());
+        
+        $execution = new PaymentExecution();
+        $execution->setPayerId($request->PayerID);
+
+        try {
+            $result = $payment->execute($execution, $this->paypalService->getApiContext());
+            
+            // Clear session
+            session()->forget('paypal_payment_id');
+            
+            // Store transaction in database
+            // $this->storeTransaction($result);
+            
+            return redirect()->route('dashboard')
+                ->with('success', 'Payment completed successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('home')
+                ->with('error', 'Payment execution failed: ' . $e->getMessage());
+        }
+    }
+
+    public function cancelPayment()
+    {
+        session()->forget('paypal_payment_id');
+        
+        return redirect()->route('home')
+            ->with('error', 'Payment was cancelled');
+    }
+}
+
+/**
+ * PayPal Subscription Controller
+ */
+class PayPalSubscriptionController extends Controller
+{
+    protected $paypalService;
+
+    public function __construct(PayPalService $paypalService)
+    {
+        $this->paypalService = $paypalService;
+    }
+
+    /**
+     * Create subscription plan (usually done once)
+     */
+    public function createPlan()
+    {
+        // Use PayPal REST API to create billing plan
+        // This is typically done via PayPal dashboard or once programmatically
+        
+        $client = new \GuzzleHttp\Client();
+        
+        $response = $client->post('https://api-m.sandbox.paypal.com/v1/billing/plans', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $this->getAccessToken(),
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'product_id' => 'PROD-XXXX',
+                'name' => 'Premium Plan',
+                'description' => 'Premium subscription plan',
+                'billing_cycles' => [
+                    [
+                        'frequency' => [
+                            'interval_unit' => 'MONTH',
+                            'interval_count' => 1,
+                        ],
+                        'tenure_type' => 'REGULAR',
+                        'sequence' => 1,
+                        'total_cycles' => 0,
+                        'pricing_scheme' => [
+                            'fixed_price' => [
+                                'value' => '9.99',
+                                'currency_code' => 'USD',
+                            ],
+                        ],
+                    ],
+                ],
+                'payment_preferences' => [
+                    'auto_bill_outstanding' => true,
+                    'setup_fee' => [
+                        'value' => '0',
+                        'currency_code' => 'USD',
+                    ],
+                    'setup_fee_failure_action' => 'CONTINUE',
+                    'payment_failure_threshold' => 3,
+                ],
+            ],
+        ]);
+        
+        return json_decode($response->getBody(), true);
+    }
+
+    public function subscribe(Request $request)
+    {
+        // Create subscription
+        $client = new \GuzzleHttp\Client();
+        
+        $response = $client->post('https://api-m.sandbox.paypal.com/v1/billing/subscriptions', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $this->getAccessToken(),
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'plan_id' => $request->plan_id,
+                'subscriber' => [
+                    'email_address' => auth()->user()->email,
+                    'name' => [
+                        'given_name' => auth()->user()->name,
+                    ],
+                ],
+                'application_context' => [
+                    'return_url' => route('paypal.subscription.success'),
+                    'cancel_url' => route('paypal.subscription.cancel'),
+                ],
+            ],
+        ]);
+        
+        $subscription = json_decode($response->getBody(), true);
+        
+        // Store subscription ID
+        auth()->user()->update(['paypal_subscription_id' => $subscription['id']]);
+        
+        // Redirect to approval URL
+        foreach ($subscription['links'] as $link) {
+            if ($link['rel'] === 'approve') {
+                return redirect($link['href']);
+            }
+        }
+    }
+
+    public function cancelSubscription(Request $request)
+    {
+        $subscriptionId = auth()->user()->paypal_subscription_id;
+        
+        $client = new \GuzzleHttp\Client();
+        
+        $client->post("https://api-m.sandbox.paypal.com/v1/billing/subscriptions/{$subscriptionId}/cancel", [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $this->getAccessToken(),
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'reason' => 'Customer requested cancellation',
+            ],
+        ]);
+        
+        return redirect()->route('dashboard')
+            ->with('success', 'Subscription cancelled successfully');
+    }
+
+    protected function getAccessToken()
+    {
+        $client = new \GuzzleHttp\Client();
+        $mode = config('paypal.mode');
+        
+        $response = $client->post("https://api-m.{$mode}.paypal.com/v1/oauth2/token", [
+            'auth' => [
+                config("paypal.{$mode}.client_id"),
+                config("paypal.{$mode}.client_secret"),
+            ],
+            'form_params' => [
+                'grant_type' => 'client_credentials',
+            ],
+        ]);
+        
+        $data = json_decode($response->getBody(), true);
+        return $data['access_token'];
+    }
+}
+
+/**
+ * Routes (routes/web.php)
+ */
+// use App\Http\Controllers\PayPalPaymentController;
+// use App\Http\Controllers\PayPalSubscriptionController;
+
+// Route::middleware(['auth'])->group(function () {
+//     // One-time payment routes
+//     Route::post('/paypal/payment', [PayPalPaymentController::class, 'createPayment'])->name('paypal.payment');
+//     Route::get('/paypal/success', [PayPalPaymentController::class, 'executePayment'])->name('paypal.success');
+//     Route::get('/paypal/cancel', [PayPalPaymentController::class, 'cancelPayment'])->name('paypal.cancel');
+//     
+//     // Subscription routes
+//     Route::post('/paypal/subscribe', [PayPalSubscriptionController::class, 'subscribe'])->name('paypal.subscribe');
+//     Route::post('/paypal/subscription/cancel', [PayPalSubscriptionController::class, 'cancelSubscription'])->name('paypal.subscription.cancel');
+// });
+
+/**
+ * Migration: Add PayPal columns to users table
+ */
+// use Illuminate\Database\Migrations\Migration;
+// use Illuminate\Database\Schema\Blueprint;
+// use Illuminate\Support\Facades\Schema;
+//
+// return new class extends Migration
+// {
+//     public function up(): void
+//     {
+//         Schema::table('users', function (Blueprint $table) {
+//             $table->string('paypal_email')->nullable();
+//             $table->string('paypal_subscription_id')->nullable();
+//             $table->string('paypal_payer_id')->nullable();
+//         });
+//     }
+//
+//     public function down(): void
+//     {
+//         Schema::table('users', function (Blueprint $table) {
+//             $table->dropColumn(['paypal_email', 'paypal_subscription_id', 'paypal_payer_id']);
+//         });
+//     }
+// };
+
+/**
+ * Blade View Example (resources/views/payment/paypal.blade.php)
+ */
+?>
+{{-- <x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            PayPal Payment
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
+                <form action="{{ route('paypal.payment') }}" method="POST">
+                    @csrf
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            Amount (USD)
+                        </label>
+                        <input type="number" 
+                               name="amount" 
+                               step="0.01" 
+                               min="1" 
+                               value="9.99"
+                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                    </div>
+                    
+                    <button type="submit" 
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Pay with PayPal
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</x-app-layout> --}}
+
+<?php
+/**
+ * Testing
+ * 
+ * PayPal Sandbox:
+ * 1. Create sandbox accounts at developer.paypal.com
+ * 2. Use sandbox credentials in .env
+ * 3. Test with sandbox buyer/seller accounts
+ * 
+ * Test Cards: Use PayPal sandbox test accounts
+ * More: https://developer.paypal.com/docs/api-basics/sandbox/
+ */
+
+/**
+ * Webhooks
+ * 
+ * 1. Set up webhook endpoint in PayPal dashboard
+ * 2. Create webhook handler controller
+ * 3. Verify webhook signatures
+ * 4. Handle events (payment.sale.completed, billing.subscription.cancelled, etc.)
+ */

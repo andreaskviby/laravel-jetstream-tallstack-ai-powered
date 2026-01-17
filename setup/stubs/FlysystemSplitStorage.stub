@@ -1,0 +1,492 @@
+<?php
+
+/**
+ * Laravel Flysystem - Split Filesystem Configuration
+ * 
+ * This stub provides configuration and examples for setting up
+ * split storage using Laravel's Flysystem integration.
+ * 
+ * Use Cases:
+ * - Store user avatars locally, product images on S3
+ * - Keep private files local, public assets on CDN
+ * - Separate user-generated content from application assets
+ * 
+ * Installation:
+ * 1. For S3: composer require league/flysystem-aws-s3-v3 "^3.0"
+ * 2. For DigitalOcean Spaces: Same as S3 (compatible)
+ * 3. For Cloudflare R2: Same as S3 (S3-compatible)
+ * 4. Configure .env and filesystems.php
+ */
+
+/**
+ * Environment Configuration (.env)
+ * 
+ * Add these to your .env file:
+ */
+// # Default filesystem
+// FILESYSTEM_DISK=local
+//
+// # AWS S3 Configuration
+// AWS_ACCESS_KEY_ID=your_access_key
+// AWS_SECRET_ACCESS_KEY=your_secret_key
+// AWS_DEFAULT_REGION=us-east-1
+// AWS_BUCKET=your_bucket_name
+// AWS_URL=https://your-bucket.s3.amazonaws.com
+// AWS_ENDPOINT=
+// AWS_USE_PATH_STYLE_ENDPOINT=false
+//
+// # DigitalOcean Spaces Configuration (S3-compatible)
+// DO_SPACES_KEY=your_spaces_key
+// DO_SPACES_SECRET=your_spaces_secret
+// DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
+// DO_SPACES_REGION=us-east-1
+// DO_SPACES_BUCKET=your_bucket_name
+//
+// # Cloudflare R2 Configuration (S3-compatible)
+// R2_ACCESS_KEY_ID=your_r2_access_key
+// R2_SECRET_ACCESS_KEY=your_r2_secret_key
+// R2_BUCKET=your_bucket_name
+// R2_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
+// R2_URL=https://your-custom-domain.com
+
+/**
+ * Filesystem Configuration (config/filesystems.php)
+ * 
+ * Replace or extend your config/filesystems.php:
+ */
+// 'disks' => [
+//
+//     'local' => [
+//         'driver' => 'local',
+//         'root' => storage_path('app'),
+//         'throw' => false,
+//     ],
+//
+//     'public' => [
+//         'driver' => 'local',
+//         'root' => storage_path('app/public'),
+//         'url' => env('APP_URL').'/storage',
+//         'visibility' => 'public',
+//         'throw' => false,
+//     ],
+//
+//     // User avatars (local storage)
+//     'avatars' => [
+//         'driver' => 'local',
+//         'root' => storage_path('app/public/avatars'),
+//         'url' => env('APP_URL').'/storage/avatars',
+//         'visibility' => 'public',
+//     ],
+//
+//     // AWS S3 - Main bucket
+//     's3' => [
+//         'driver' => 's3',
+//         'key' => env('AWS_ACCESS_KEY_ID'),
+//         'secret' => env('AWS_SECRET_ACCESS_KEY'),
+//         'region' => env('AWS_DEFAULT_REGION'),
+//         'bucket' => env('AWS_BUCKET'),
+//         'url' => env('AWS_URL'),
+//         'endpoint' => env('AWS_ENDPOINT'),
+//         'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+//         'throw' => false,
+//     ],
+//
+//     // S3 - Product images (public)
+//     's3-products' => [
+//         'driver' => 's3',
+//         'key' => env('AWS_ACCESS_KEY_ID'),
+//         'secret' => env('AWS_SECRET_ACCESS_KEY'),
+//         'region' => env('AWS_DEFAULT_REGION'),
+//         'bucket' => env('AWS_BUCKET'),
+//         'root' => 'products',
+//         'url' => env('AWS_URL').'/products',
+//         'visibility' => 'public',
+//     ],
+//
+//     // S3 - User-generated content (private)
+//     's3-private' => [
+//         'driver' => 's3',
+//         'key' => env('AWS_ACCESS_KEY_ID'),
+//         'secret' => env('AWS_SECRET_ACCESS_KEY'),
+//         'region' => env('AWS_DEFAULT_REGION'),
+//         'bucket' => env('AWS_BUCKET'),
+//         'root' => 'private',
+//         'visibility' => 'private',
+//     ],
+//
+//     // DigitalOcean Spaces
+//     'spaces' => [
+//         'driver' => 's3',
+//         'key' => env('DO_SPACES_KEY'),
+//         'secret' => env('DO_SPACES_SECRET'),
+//         'endpoint' => env('DO_SPACES_ENDPOINT'),
+//         'region' => env('DO_SPACES_REGION', 'us-east-1'),
+//         'bucket' => env('DO_SPACES_BUCKET'),
+//         'visibility' => 'public',
+//     ],
+//
+//     // Cloudflare R2
+//     'r2' => [
+//         'driver' => 's3',
+//         'key' => env('R2_ACCESS_KEY_ID'),
+//         'secret' => env('R2_SECRET_ACCESS_KEY'),
+//         'region' => 'auto',
+//         'bucket' => env('R2_BUCKET'),
+//         'endpoint' => env('R2_ENDPOINT'),
+//         'url' => env('R2_URL'),
+//         'use_path_style_endpoint' => false,
+//     ],
+//
+// ],
+
+/**
+ * Storage Helper Service
+ * 
+ * Create a service to manage file storage decisions
+ */
+namespace App\Services;
+
+use Illuminate\Support\Facades\Storage;
+
+class FileStorageService
+{
+    /**
+     * Determine which disk to use for a file type
+     */
+    public function getDisk(string $fileType): string
+    {
+        return match($fileType) {
+            'avatar' => 'avatars',        // Local storage
+            'product' => 's3-products',   // S3 public
+            'document' => 's3-private',   // S3 private
+            'temp' => 'local',            // Temporary files
+            default => config('filesystems.default'),
+        };
+    }
+
+    /**
+     * Store a file with automatic disk selection
+     */
+    public function store($file, string $fileType, ?string $path = null): string
+    {
+        $disk = $this->getDisk($fileType);
+        $path = $path ?? $fileType . 's';
+        
+        return Storage::disk($disk)->putFile($path, $file);
+    }
+
+    /**
+     * Get file URL
+     */
+    public function url(string $path, string $fileType): string
+    {
+        $disk = $this->getDisk($fileType);
+        return Storage::disk($disk)->url($path);
+    }
+
+    /**
+     * Get temporary URL (for private files)
+     */
+    public function temporaryUrl(string $path, string $fileType, int $minutes = 60): string
+    {
+        $disk = $this->getDisk($fileType);
+        return Storage::disk($disk)->temporaryUrl($path, now()->addMinutes($minutes));
+    }
+
+    /**
+     * Delete file
+     */
+    public function delete(string $path, string $fileType): bool
+    {
+        $disk = $this->getDisk($fileType);
+        return Storage::disk($disk)->delete($path);
+    }
+
+    /**
+     * Check if file exists
+     */
+    public function exists(string $path, string $fileType): bool
+    {
+        $disk = $this->getDisk($fileType);
+        return Storage::disk($disk)->exists($path);
+    }
+}
+
+/**
+ * Usage Examples in Controllers
+ */
+namespace App\Http\Controllers;
+
+use App\Services\FileStorageService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+class FileUploadController extends Controller
+{
+    public function __construct(
+        protected FileStorageService $storage
+    ) {}
+
+    /**
+     * Upload user avatar (local storage)
+     */
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|max:2048',
+        ]);
+
+        // Delete old avatar if exists
+        if ($request->user()->avatar) {
+            $this->storage->delete($request->user()->avatar, 'avatar');
+        }
+
+        // Store new avatar locally
+        $path = $this->storage->store($request->file('avatar'), 'avatar');
+
+        // Update user
+        $request->user()->update(['avatar' => $path]);
+
+        return back()->with('success', 'Avatar updated successfully');
+    }
+
+    /**
+     * Upload product image (S3 storage)
+     */
+    public function uploadProductImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|max:5120',
+        ]);
+
+        // Store on S3
+        $path = $this->storage->store($request->file('image'), 'product');
+
+        // Get public URL
+        $url = $this->storage->url($path, 'product');
+
+        return response()->json([
+            'path' => $path,
+            'url' => $url,
+        ]);
+    }
+
+    /**
+     * Upload private document (S3 private storage)
+     */
+    public function uploadDocument(Request $request)
+    {
+        $request->validate([
+            'document' => 'required|file|max:10240',
+        ]);
+
+        // Store privately on S3
+        $path = $this->storage->store($request->file('document'), 'document');
+
+        return response()->json([
+            'path' => $path,
+            'message' => 'Document uploaded successfully',
+        ]);
+    }
+
+    /**
+     * Download private document
+     */
+    public function downloadDocument(Request $request, $path)
+    {
+        // Generate temporary URL (valid for 1 hour)
+        $url = $this->storage->temporaryUrl($path, 'document', 60);
+
+        return redirect($url);
+    }
+
+    /**
+     * Direct Storage usage examples
+     */
+    public function directStorageExamples(Request $request)
+    {
+        // Store file on specific disk
+        $path = Storage::disk('avatars')->putFile('uploads', $request->file('file'));
+
+        // Store with custom name
+        $path = Storage::disk('s3-products')->putFileAs(
+            'products',
+            $request->file('image'),
+            'product-'.time().'.jpg'
+        );
+
+        // Get file contents
+        $contents = Storage::disk('s3-private')->get('path/to/file.pdf');
+
+        // Check if file exists
+        if (Storage::disk('avatars')->exists('avatars/user-1.jpg')) {
+            // File exists
+        }
+
+        // Delete file
+        Storage::disk('s3-products')->delete('products/old-image.jpg');
+
+        // Delete multiple files
+        Storage::disk('s3-products')->delete([
+            'products/image1.jpg',
+            'products/image2.jpg',
+        ]);
+
+        // Copy file between disks
+        $contents = Storage::disk('local')->get('file.jpg');
+        Storage::disk('s3')->put('file.jpg', $contents);
+
+        // Move file
+        Storage::disk('s3')->move('old-path.jpg', 'new-path.jpg');
+
+        // Get file size
+        $size = Storage::disk('s3')->size('path/to/file.jpg');
+
+        // Get last modified time
+        $time = Storage::disk('s3')->lastModified('path/to/file.jpg');
+
+        // List files in directory
+        $files = Storage::disk('s3-products')->files('products');
+
+        // List all files recursively
+        $allFiles = Storage::disk('s3-products')->allFiles('products');
+
+        // List directories
+        $directories = Storage::disk('s3')->directories('path');
+    }
+}
+
+/**
+ * Model Example - User with Avatar
+ */
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+
+class User extends Model
+{
+    /**
+     * Get avatar URL
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->avatar) {
+            return null;
+        }
+
+        // If avatar is stored locally
+        if (str_starts_with($this->avatar, 'avatars/')) {
+            return Storage::disk('avatars')->url($this->avatar);
+        }
+
+        // If avatar is stored on S3
+        return Storage::disk('s3')->url($this->avatar);
+    }
+
+    /**
+     * Delete old avatar when updating
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updating(function ($user) {
+            if ($user->isDirty('avatar') && $user->getOriginal('avatar')) {
+                Storage::disk('avatars')->delete($user->getOriginal('avatar'));
+            }
+        });
+
+        static::deleting(function ($user) {
+            if ($user->avatar) {
+                Storage::disk('avatars')->delete($user->avatar);
+            }
+        });
+    }
+}
+
+/**
+ * Blade View Examples
+ */
+?>
+{{-- Display avatar --}}
+{{-- @if (auth()->user()->avatar_url)
+    <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="w-10 h-10 rounded-full">
+@else
+    <div class="w-10 h-10 rounded-full bg-gray-300"></div>
+@endif --}}
+
+{{-- Upload form --}}
+{{-- <form action="{{ route('avatar.upload') }}" method="POST" enctype="multipart/form-data">
+    @csrf
+    <input type="file" name="avatar" accept="image/*">
+    <button type="submit">Upload Avatar</button>
+</form> --}}
+
+<?php
+/**
+ * Routes (routes/web.php)
+ */
+// use App\Http\Controllers\FileUploadController;
+//
+// Route::middleware(['auth'])->group(function () {
+//     Route::post('/avatar/upload', [FileUploadController::class, 'uploadAvatar'])->name('avatar.upload');
+//     Route::post('/product/image', [FileUploadController::class, 'uploadProductImage'])->name('product.image');
+//     Route::post('/document/upload', [FileUploadController::class, 'uploadDocument'])->name('document.upload');
+//     Route::get('/document/download/{path}', [FileUploadController::class, 'downloadDocument'])->name('document.download');
+// });
+
+/**
+ * Setup Public Storage Link
+ * 
+ * Run this command to create symbolic link:
+ */
+// php artisan storage:link
+
+/**
+ * Storage Best Practices
+ */
+// 1. Use local storage for:
+//    - User avatars (< 1MB)
+//    - Temporary files
+//    - Development environment
+//
+// 2. Use S3/Cloud storage for:
+//    - Product images
+//    - User-generated content
+//    - Large files (videos, documents)
+//    - Production environment
+//
+// 3. Security:
+//    - Use private disks for sensitive files
+//    - Generate temporary URLs for private files
+//    - Validate file types before upload
+//    - Limit file sizes
+//
+// 4. Performance:
+//    - Use CDN for public assets
+//    - Optimize images before upload
+//    - Use appropriate cache headers
+//    - Consider lazy loading for images
+
+/**
+ * Cost Optimization
+ */
+// S3 Storage Classes:
+// - Standard: Frequently accessed files
+// - Intelligent-Tiering: Unknown access patterns
+// - Infrequent Access: Backup files
+// - Glacier: Long-term archives
+//
+// Use lifecycle policies to automatically move files to cheaper storage
+
+/**
+ * Migration Example
+ */
+// Migrate files from local to S3:
+// $localFiles = Storage::disk('public')->allFiles();
+// 
+// foreach ($localFiles as $file) {
+//     $contents = Storage::disk('public')->get($file);
+//     Storage::disk('s3')->put($file, $contents);
+// }
