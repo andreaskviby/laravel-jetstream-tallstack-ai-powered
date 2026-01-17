@@ -19,6 +19,10 @@ A comprehensive starter kit for quickly bootstrapping Laravel projects with Jets
 
 🤖 **AI Integration**
 - Claude AI API integration ready
+- Laravel Prism / Laravel AI SDK support
+- MCP (Model Context Protocol) compatible
+- AI-powered development agents
+- Pre-configured Claude Code agents and skills
 - OAuth login support for Claude
 - Pre-configured for AI-powered features
 
@@ -27,6 +31,8 @@ A comprehensive starter kit for quickly bootstrapping Laravel projects with Jets
 - Automatic database setup (MySQL or SQLite)
 - Laravel Herd mail configuration support
 - Quick curl or composer installation
+- Claude Code agents for accelerated development
+- Comprehensive skill modules for common tasks
 
 ## Installation
 
@@ -102,14 +108,31 @@ OTP_DEFAULT_CODE=123456
 
 **Production**: OTP codes are sent via email and expire after 10 minutes (configurable).
 
-### Claude AI Integration
+### AI Integration
 
-Configure Claude AI in your `.env` file:
+Configure AI services in your `.env` file:
 
 ```env
-CLAUDE_API_KEY=your-api-key-here
-CLAUDE_MODEL=claude-3-5-sonnet-20241022
+# Claude AI (via Anthropic)
+ANTHROPIC_API_KEY=your-api-key-here
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+
+# Laravel Prism (recommended)
+PRISM_PROVIDER=anthropic
+PRISM_CACHE_ENABLED=true
+
+# Alternative: OpenAI
+OPENAI_API_KEY=your-openai-key
+OPENAI_MODEL=gpt-4
 ```
+
+**Available AI Tools:**
+- **Laravel Prism**: Multi-provider AI integration (recommended)
+- **Laravel AI SDK**: Official Laravel AI package
+- **MCP (Model Context Protocol)**: Context-aware AI development
+- **Laravel Boost**: AI-powered code generation
+
+See [AI Tools Setup Guide](.github/ISSUE_TEMPLATE/) for installation instructions.
 
 ### Database Configuration
 
@@ -132,6 +155,23 @@ DB_PASSWORD=your_password
 ## Project Structure
 
 ```
+├── .github/
+│   ├── agents/                  # Claude Code agents & skills
+│   │   ├── README.md           # Agents documentation
+│   │   ├── laravel-developer.md
+│   │   ├── database-migration-expert.md
+│   │   ├── testing-expert.md
+│   │   ├── frontend-tall-stack-expert.md
+│   │   ├── api-developer.md
+│   │   └── skills/             # Project-specific skills
+│   │       ├── otp-authentication-skills.md
+│   │       ├── team-management-skills.md
+│   │       ├── ai-integration-skills.md
+│   │       └── security-best-practices.md
+│   └── ISSUE_TEMPLATE/         # Setup guides for AI tools
+│       ├── install_laravel_boost.md
+│       ├── install_mcp.md
+│       └── install_laravel_ai_sdk.md
 ├── setup/
 │   ├── installer.php           # Main installation script
 │   └── stubs/                  # Template files
@@ -171,6 +211,33 @@ Full integration of the TALL stack:
 - **Alpine.js**: Minimal JavaScript framework
 - **Livewire**: Full-stack framework for Laravel
 - **Laravel**: The PHP framework for web artisans
+
+### AI-Powered Development
+
+This project includes comprehensive AI development tools:
+
+#### Claude Code Agents
+Pre-built agents for accelerated development:
+- **Laravel Developer**: Full-stack Laravel development assistance
+- **Database Expert**: Migration and query optimization
+- **Testing Expert**: PHPUnit and Pest testing guidance
+- **Frontend Expert**: TALL stack UI development
+- **API Developer**: RESTful API design and implementation
+
+#### Project Skills
+Specialized skills for this platform:
+- **OTP Authentication**: Complete OTP implementation patterns
+- **Team Management**: Multi-tenant team features
+- **AI Integration**: Laravel Prism, MCP, and AI SDK usage
+- **Security**: Best practices for secure Laravel apps
+
+#### Getting Started with AI Tools
+1. **View Agents**: See [.github/agents/README.md](.github/agents/README.md)
+2. **Install AI Tools**: Follow [setup guides](.github/ISSUE_TEMPLATE/)
+3. **Use with Claude Desktop**: Configure MCP integration
+4. **Reference in Development**: Use agents as coding companions
+
+See the [AI Agents Documentation](.github/agents/README.md) for detailed usage instructions.
 
 ## Requirements
 
