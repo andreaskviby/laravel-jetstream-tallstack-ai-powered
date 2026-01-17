@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -63,7 +64,7 @@ class CreateNewUser implements CreatesNewUsers
     /**
      * Accept all pending team invitations for the user.
      */
-    protected function acceptPendingInvitations(User $user, $invitations): void
+    protected function acceptPendingInvitations(User $user, Collection $invitations): void
     {
         foreach ($invitations as $invitation) {
             // Add the user to the team
