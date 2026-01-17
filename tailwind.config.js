@@ -1,8 +1,3 @@
-import defaultTheme from 'tailwindcss/defaultTheme';
-import forms from '@tailwindcss/forms';
-import typography from '@tailwindcss/typography';
-
-/** @type {import('tailwindcss').Config} */
 export default {
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
@@ -14,10 +9,13 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Figtree', 'sans-serif'],
             },
         },
     },
 
-    plugins: [forms, typography],
+    plugins: [
+        require('@tailwindcss/forms'),
+        require('@tailwindcss/typography'),
+    ],
 };

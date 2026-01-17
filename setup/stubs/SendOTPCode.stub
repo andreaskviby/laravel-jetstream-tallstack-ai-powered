@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Actions\Fortify;
+
+use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+
+class SendOTPCode
+{
+    /**
+     * Send an OTP code to the user's email.
+     *
+     * @param  \App\Models\User  $user
+     * @return string
+     */
+    public function __invoke(User $user): string
+    {
+        // Check if we're in local environment with prefill enabled
+        if ($this->shouldUsePrefillCode()) {
+            $code = config('auth.otp.default_code', '123456');
+        } else {
+            // Generate a random OTP code
+            $code = $this->generateCode();
+        }
+        
+        // Store the code in cache with expiration
+        $this->storeCode($user, $code);
+        
+        // Send the code via email (skip in local with prefill)
+        if (!$this->shouldUsePrefillCode()) {
+            $this->sendCodeViaEmail($user, $code);
+        }
+        
+        return $code;
+    }
+
+    /**
+     * Generate a random OTP code.
+     *
+     * @return string
+     */
+    protected function generateCode(): string
+    {
+        $length = config('auth.otp.length', 6);
+        
+        return str_pad(
+            (string) random_int(0, pow(10, $length) - 1),
+            $length,
+            '0',
+            STR_PAD_LEFT
+        );
+    }
+
+    /**
+     * Store the OTP code in cache.
+     *
+     * @param  \App\Models\User  $user
+     * @param  string  $code
+     * @return void
+     */
+    protected function storeCode(User $user, string $code): void
+    {
+        $expiresIn = config('auth.otp.expires_in', 10);
+        
+        Cache::put(
+            "otp:{$user->id}",
+            $code,
+            now()->addMinutes($expiresIn)
+        );
+    }
+
+    /**
+     * Send the OTP code via email.
+     *
+     * @param  \App\Models\User  $user
+     * @param  string  $code
+     * @return void
+     */
+    protected function sendCodeViaEmail(User $user, string $code): void
+    {
+        // Email view path - make this configurable via config if needed
+        $emailView = config('auth.otp.email_view', 'emails.otp');
+        $viewPath = resource_path("views/{$emailView}.blade.php");
+        
+        if (file_exists($viewPath)) {
+            Mail::send($emailView, ['code' => $code], function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Your Login Code');
+            });
+        } else {
+            // Fallback to raw text email
+            Mail::raw("Your login code is: $code\n\nThis code will expire in 10 minutes.", function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Your Login Code');
+            });
+        }
+    }
+
+    /**
+     * Check if we should use the prefilled code.
+     *
+     * @return bool
+     */
+    protected function shouldUsePrefillCode(): bool
+    {
+        return config('auth.otp.prefill_local', false) 
+               && app()->environment('local');
+    }
+}
