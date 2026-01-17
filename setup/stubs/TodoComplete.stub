@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Todo;
+use Illuminate\Console\Command;
+
+class TodoComplete extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'todo:complete
+                            {id : The ID of the todo to mark as completed}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Mark a todo item as completed';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $id = $this->argument('id');
+        $todo = Todo::find($id);
+
+        if (!$todo) {
+            $this->error("Todo with ID {$id} not found.");
+            return self::FAILURE;
+        }
+
+        if ($todo->status === 'completed') {
+            $this->warn("Todo is already completed.");
+            return self::SUCCESS;
+        }
+
+        $todo->markAsCompleted();
+
+        $this->info("✓ Todo marked as completed!");
+        $this->line("  ID: {$todo->id}");
+        $this->line("  Title: {$todo->title}");
+        $this->line("  Completed at: {$todo->completed_at->format('Y-m-d H:i:s')}");
+
+        return self::SUCCESS;
+    }
+}

@@ -1,0 +1,99 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Todo;
+use Illuminate\Console\Command;
+
+class TodoList extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'todo:list
+                            {--status= : Filter by status (pending, in_progress, completed)}
+                            {--priority= : Filter by priority (low, medium, high)}
+                            {--all : Show all todos including completed}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'List all todo items';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $query = Todo::query()->orderBy('priority', 'desc')->orderBy('created_at', 'desc');
+
+        // Apply filters
+        if ($status = $this->option('status')) {
+            $query->where('status', $status);
+        } elseif (!$this->option('all')) {
+            // By default, don't show completed todos unless --all is specified
+            $query->whereIn('status', ['pending', 'in_progress']);
+        }
+
+        if ($priority = $this->option('priority')) {
+            $query->where('priority', $priority);
+        }
+
+        $todos = $query->get();
+
+        if ($todos->isEmpty()) {
+            $this->info('No todos found.');
+            return self::SUCCESS;
+        }
+
+        $this->info("Found {$todos->count()} todo(s):\n");
+
+        $headers = ['ID', 'Title', 'Priority', 'Status', 'Created', 'Completed'];
+        $rows = [];
+
+        foreach ($todos as $todo) {
+            $rows[] = [
+                $todo->id,
+                strlen($todo->title) > 50 ? substr($todo->title, 0, 47) . '...' : $todo->title,
+                $this->colorPriority($todo->priority),
+                $this->colorStatus($todo->status),
+                $todo->created_at->format('Y-m-d H:i'),
+                $todo->completed_at ? $todo->completed_at->format('Y-m-d H:i') : '-',
+            ];
+        }
+
+        $this->table($headers, $rows);
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Colorize priority text.
+     */
+    private function colorPriority(string $priority): string
+    {
+        return match($priority) {
+            'high' => "<fg=red>{$priority}</>",
+            'medium' => "<fg=yellow>{$priority}</>",
+            'low' => "<fg=green>{$priority}</>",
+            default => $priority,
+        };
+    }
+
+    /**
+     * Colorize status text.
+     */
+    private function colorStatus(string $status): string
+    {
+        return match($status) {
+            'completed' => "<fg=green>{$status}</>",
+            'in_progress' => "<fg=yellow>{$status}</>",
+            'pending' => "<fg=gray>{$status}</>",
+            default => $status,
+        };
+    }
+}

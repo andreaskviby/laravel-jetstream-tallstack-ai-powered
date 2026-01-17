@@ -21,12 +21,14 @@ A comprehensive starter kit for quickly bootstrapping Laravel projects with Jets
 - Claude AI API integration ready
 - OAuth login support for Claude
 - Pre-configured for AI-powered features
+- Built-in todo management system for AI assistants
 
 ⚡ **Developer Experience**
 - Interactive installation wizard
 - Automatic database setup (MySQL or SQLite)
 - Laravel Herd mail configuration support
 - Quick curl or composer installation
+- Command-line todo management (perfect for AI assistants like Claude)
 
 ## Installation
 
@@ -111,6 +113,39 @@ CLAUDE_API_KEY=your-api-key-here
 CLAUDE_MODEL=claude-3-5-sonnet-20241022
 ```
 
+### Todo Management System
+
+The starter kit includes a built-in command-line todo management system, perfect for developers and AI assistants like Claude to track tasks and progress.
+
+**Quick Start:**
+```bash
+# Add a todo
+php artisan todo:add "Create user profile page" --priority=high
+
+# List todos
+php artisan todo:list
+
+# Mark as completed
+php artisan todo:complete 1
+```
+
+**Available Commands:**
+- `php artisan todo:add` - Add a new todo
+- `php artisan todo:list` - List all todos (with filters)
+- `php artisan todo:show` - Show todo details
+- `php artisan todo:update` - Update a todo
+- `php artisan todo:complete` - Mark todo as completed
+- `php artisan todo:delete` - Delete a todo
+
+**Features:**
+- Priority levels (low, medium, high)
+- Status tracking (pending, in_progress, completed)
+- Context storage for additional notes
+- Colorized command-line output
+- Works with Laravel Tinker for advanced operations
+
+For detailed documentation, see [TODO_MANAGEMENT.md](TODO_MANAGEMENT.md).
+
 ### Database Configuration
 
 **SQLite** (default for quick start):
@@ -139,9 +174,18 @@ DB_PASSWORD=your_password
 │       ├── VerifyOTPCode.stub  # OTP verification action
 │       ├── auth.config.stub    # Auth configuration
 │       ├── otp-email.stub      # OTP email template
-│       └── login.blade.stub    # OTP login view
+│       ├── login.blade.stub    # OTP login view
+│       ├── Todo.stub           # Todo model
+│       ├── TodoAdd.stub        # Add todo command
+│       ├── TodoList.stub       # List todos command
+│       ├── TodoUpdate.stub     # Update todo command
+│       ├── TodoComplete.stub   # Complete todo command
+│       ├── TodoDelete.stub     # Delete todo command
+│       ├── TodoShow.stub       # Show todo command
+│       └── create_todos_table.stub  # Todo migration
 ├── install.sh                  # Curl installer script
 ├── composer.json              # Composer configuration
+├── TODO_MANAGEMENT.md         # Todo system documentation
 └── README.md                  # This file
 ```
 
