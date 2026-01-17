@@ -150,6 +150,88 @@ Multi-tenant from day one with:
 | Cookie Policy | With consent banner |
 | GDPR Compliance | EU regulation ready |
 
+---
+
+## 🤖 Claude Code Expert Agents
+
+This starter kit includes **8 pre-configured expert agents** that automatically consult the official documentation before writing any code. Each agent is specialized in its framework and follows documentation-first development.
+
+### Agent List
+
+| Agent | Expertise | Documentation URL |
+|-------|-----------|-------------------|
+| **Laravel 12 Expert** | Core Laravel framework, Eloquent, routing, middleware | [laravel.com/docs/12.x](https://laravel.com/docs/12.x) |
+| **Livewire 4 Expert** | Livewire components, properties, actions, lifecycle | [livewire.laravel.com/docs/4.x](https://livewire.laravel.com/docs/4.x) |
+| **Tailwind CSS 4 Expert** | Utility classes, configuration, responsive design | [tailwindcss.com/docs](https://tailwindcss.com/docs) |
+| **Alpine.js Expert** | Directives, magics, plugins, reactivity | [alpinejs.dev](https://alpinejs.dev) |
+| **Filament 5 Expert** | Resources, forms, tables, widgets, panels | [filamentphp.com/docs/5.x](https://filamentphp.com/docs/5.x) |
+| **Jetstream Expert** | Teams, profiles, API tokens, authentication | [jetstream.laravel.com](https://jetstream.laravel.com) |
+| **Spatie Permissions Expert** | Roles, permissions, team-scoped access | [spatie.be/docs/laravel-permission/v6](https://spatie.be/docs/laravel-permission/v6) |
+| **Legal Compliance Expert** | GDPR, CCPA, ePrivacy, international regulations | Multiple regulatory sources |
+
+### How Agents Work
+
+Each agent follows a strict **documentation-first** approach:
+
+```
+1. IDENTIFY the feature needed
+2. FETCH the official documentation (WebFetch tool)
+3. READ and understand the latest syntax
+4. IMPLEMENT following documented patterns
+5. VERIFY against best practices
+```
+
+### Using Agents
+
+Claude Code automatically uses the appropriate agent based on your request:
+
+```bash
+# Claude Code detects Livewire work and uses livewire-4-expert
+"Create a Livewire component for user settings"
+
+# Claude Code detects Filament work and uses filament-5-expert
+"Add a dashboard widget showing monthly revenue"
+
+# Claude Code detects permission work and uses spatie-permissions-expert
+"Add a new moderator role with limited permissions"
+
+# Claude Code detects legal work and uses legal-compliance-expert
+"Implement GDPR data export functionality"
+```
+
+### Agent Locations
+
+All agents are stored in `.github/agents/`:
+
+```
+.github/agents/
+├── laravel-12-expert.md
+├── livewire-4-expert.md
+├── tailwind-4-expert.md
+├── alpine-js-expert.md
+├── filament-5-expert.md
+├── jetstream-expert.md
+├── spatie-permissions-expert.md
+└── legal-compliance-expert.md
+```
+
+### Legal Compliance Agent Features
+
+The legal compliance agent provides guidance for:
+
+| Regulation | Coverage |
+|------------|----------|
+| **GDPR (EU)** | Data subject rights, consent, lawful basis |
+| **CCPA/CPRA (California)** | Do Not Sell, access, deletion rights |
+| **ePrivacy Directive** | Cookie consent, tracking rules |
+| **LGPD (Brazil)** | Brazilian data protection |
+| **PIPEDA (Canada)** | Canadian privacy requirements |
+| **POPIA (South Africa)** | South African protection |
+
+**Note**: Legal agents provide technical implementation guidance only. Always consult qualified legal counsel for legal advice.
+
+---
+
 ### Team Branding
 | Feature | Description |
 |---------|-------------|
@@ -367,7 +449,19 @@ php artisan test --filter TeamBrandingTest
 |----------|-------------|
 | [CLAUDE.md](CLAUDE.md) | Claude Code integration guide |
 | [docs/SPATIE_ROLES.md](docs/SPATIE_ROLES.md) | Roles & permissions documentation |
-| [.github/agents/README.md](.github/agents/README.md) | Claude Code agents |
+| [.github/agents/](/.github/agents/) | 8 Claude Code expert agents |
+
+### Framework Documentation
+
+| Framework | Version | Documentation |
+|-----------|---------|---------------|
+| Laravel | 12.x | [laravel.com/docs/12.x](https://laravel.com/docs/12.x) |
+| Livewire | 4.x | [livewire.laravel.com/docs/4.x](https://livewire.laravel.com/docs/4.x) |
+| Tailwind CSS | 4.x | [tailwindcss.com/docs](https://tailwindcss.com/docs) |
+| Alpine.js | 3.15 | [alpinejs.dev](https://alpinejs.dev) |
+| Filament | 5.x | [filamentphp.com/docs/5.x](https://filamentphp.com/docs/5.x) |
+| Jetstream | 5.x | [jetstream.laravel.com](https://jetstream.laravel.com) |
+| Spatie Permissions | 6.x | [spatie.be/docs/laravel-permission/v6](https://spatie.be/docs/laravel-permission/v6) |
 
 ---
 
