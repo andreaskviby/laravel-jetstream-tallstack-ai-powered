@@ -157,7 +157,7 @@ Multi-tenant from day one with:
 
 ## 🤖 Claude Code Expert Agents
 
-This starter kit includes **8 pre-configured expert agents** that automatically consult the official documentation before writing any code. Each agent is specialized in its framework and follows documentation-first development.
+This starter kit includes **9 pre-configured expert agents** that automatically consult the official documentation before writing any code. Each agent is specialized in its framework and follows documentation-first development.
 
 ### Agent List
 
@@ -171,6 +171,7 @@ This starter kit includes **8 pre-configured expert agents** that automatically 
 | **Jetstream Expert** | Teams, profiles, API tokens, authentication | [jetstream.laravel.com](https://jetstream.laravel.com) |
 | **Spatie Permissions Expert** | Roles, permissions, team-scoped access | [spatie.be/docs/laravel-permission/v6](https://spatie.be/docs/laravel-permission/v6) |
 | **Legal Compliance Expert** | GDPR, CCPA, ePrivacy, international regulations | Multiple regulatory sources |
+| **Landing Page Generator** | AI-powered landing page creation, conversion optimization | Custom TALL Stack templates |
 
 ### How Agents Work
 
@@ -215,7 +216,8 @@ All agents are stored in `.github/agents/`:
 ├── filament-5-expert.md
 ├── jetstream-expert.md
 ├── spatie-permissions-expert.md
-└── legal-compliance-expert.md
+├── legal-compliance-expert.md
+└── landing-page-generator.md
 ```
 
 ### Legal Compliance Agent Features
@@ -260,6 +262,25 @@ composer install
 # Run the interactive installer
 php setup/UltimateInstaller.php
 ```
+
+### Installer Options
+
+```bash
+# Fresh install
+php setup/UltimateInstaller.php
+
+# Clean reinstall (backs up existing project and reinstalls fresh)
+php setup/UltimateInstaller.php --clean
+
+# Show help
+php setup/UltimateInstaller.php --help
+```
+
+The `--clean` flag is useful for developers testing the installer. It will:
+1. Detect if the project directory already exists
+2. Ask for confirmation
+3. Backup the existing project to `{name}_backup_{timestamp}`
+4. Perform a fresh installation
 
 ### Option 2: Curl Install (Fresh Laravel)
 

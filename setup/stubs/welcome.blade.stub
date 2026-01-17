@@ -17,17 +17,18 @@
 <body class="antialiased">
     <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <!-- Navigation -->
-        <nav class="relative z-10">
+        <nav x-data="{ open: false }" class="relative z-10">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16 items-center">
                     <div class="flex items-center">
                         <span class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                            {{ config('app.name', 'TALL Stack') }}
+                            {{ config('app.name', '{{APP_NAME}}') }}
                         </span>
                     </div>
 
+                    <!-- Desktop Navigation -->
                     @if (Route::has('login'))
-                        <div class="flex items-center gap-4">
+                        <div class="hidden md:flex items-center gap-4">
                             @auth
                                 <a href="{{ url('/dashboard') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
                                     Dashboard
@@ -45,6 +46,38 @@
                             @endauth
                         </div>
                     @endif
+
+                    <!-- Mobile menu button -->
+                    <div class="md:hidden">
+                        <button @click="open = !open" class="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
+                            <svg x-show="!open" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                            <svg x-show="open" x-cloak class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile Navigation -->
+                <div x-show="open" x-cloak x-transition class="md:hidden py-4 border-t border-gray-200 dark:border-gray-700">
+                    @if (Route::has('login'))
+                        @auth
+                            <a href="{{ url('/dashboard') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md">
+                                Dashboard
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md">
+                                Log in
+                            </a>
+                            @if (Route::has('register'))
+                                <a href="{{ route('register') }}" class="block px-3 py-2 text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md mt-2">
+                                    Get Started
+                                </a>
+                            @endif
+                        @endauth
+                    @endif
                 </div>
             </div>
         </nav>
@@ -58,37 +91,34 @@
                         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
                         </svg>
-                        Powered by Claude Code AI
+                        AI-Powered Development
                     </div>
 
                     <!-- Heading -->
                     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">
-                        Build SaaS Apps
+                        Welcome to
                         <span class="block bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                            Faster Than Ever
+                            {{ config('app.name', '{{APP_NAME}}') }}
                         </span>
                     </h1>
 
                     <!-- Subheading -->
                     <p class="max-w-2xl mx-auto text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-10">
-                        The ultimate Laravel TALL Stack starter kit with Jetstream, Teams, AI-powered development, and everything you need to launch your SaaS.
+                        Built with Laravel TALL Stack. Get started by customizing this landing page or dive right into building your features.
                     </p>
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
                         @if (Route::has('register'))
                             <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition-all hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5">
-                                Start Building Free
+                                Get Started Free
                                 <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                                 </svg>
                             </a>
                         @endif
-                        <a href="https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered" target="_blank" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/>
-                            </svg>
-                            View on GitHub
+                        <a href="#features" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            Learn More
                         </a>
                     </div>
                 </div>
@@ -96,7 +126,7 @@
         </div>
 
         <!-- Features Section -->
-        <div class="py-24 bg-white dark:bg-gray-800/50">
+        <div id="features" class="py-24 bg-white dark:bg-gray-800/50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -108,7 +138,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Feature 1: TALL Stack -->
+                    <!-- Feature 1 -->
                     <div class="relative p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
                         <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
                             <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,132 +147,116 @@
                         </div>
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">TALL Stack</h3>
                         <p class="text-gray-600 dark:text-gray-400">
-                            Tailwind CSS 4, Alpine.js 3.15, Laravel 12, and Livewire 4 - the most productive stack for modern web apps.
+                            Tailwind CSS, Alpine.js, Laravel, and Livewire - the most productive stack for modern web apps.
                         </p>
                     </div>
 
-                    <!-- Feature 2: Teams -->
+                    <!-- Feature 2 -->
                     <div class="relative p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
                         <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center mb-4">
                             <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Multi-Tenant Teams</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Teams & Roles</h3>
                         <p class="text-gray-600 dark:text-gray-400">
-                            Jetstream teams with Spatie permissions, team branding, invitations, and role-based access control.
+                            Multi-tenant teams with Spatie permissions, invitations, and role-based access control.
                         </p>
                     </div>
 
-                    <!-- Feature 3: Auth -->
+                    <!-- Feature 3 -->
                     <div class="relative p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
                         <div class="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-xl flex items-center justify-center mb-4">
                             <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Modern Authentication</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Modern Auth</h3>
                         <p class="text-gray-600 dark:text-gray-400">
-                            Passwordless OTP, social login (Google, GitHub, etc.), or traditional auth. Your choice during setup.
+                            Passwordless OTP, social login, or traditional auth - configured during installation.
                         </p>
                     </div>
 
-                    <!-- Feature 4: Admin Panel -->
+                    <!-- Feature 4 -->
                     <div class="relative p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
                         <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-xl flex items-center justify-center mb-4">
                             <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Filament 5 Admin</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Admin Panel</h3>
                         <p class="text-gray-600 dark:text-gray-400">
-                            Beautiful admin panel with user management, role management, and customizable dashboard widgets.
+                            Beautiful Filament admin panel with user management and customizable dashboard widgets.
                         </p>
                     </div>
 
-                    <!-- Feature 5: AI Powered -->
+                    <!-- Feature 5 -->
                     <div class="relative p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
                         <div class="w-12 h-12 bg-pink-100 dark:bg-pink-900/50 rounded-xl flex items-center justify-center mb-4">
                             <svg class="w-6 h-6 text-pink-600 dark:text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Claude Code Integration</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">AI Integration</h3>
                         <p class="text-gray-600 dark:text-gray-400">
-                            Built-in todo system and 8 expert agents. Describe features and let AI build them for you.
+                            Built-in Claude Code integration with todo system and expert development agents.
                         </p>
                     </div>
 
-                    <!-- Feature 6: Payments -->
+                    <!-- Feature 6 -->
                     <div class="relative p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
                         <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center mb-4">
                             <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Ready for Payments</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Payment Ready</h3>
                         <p class="text-gray-600 dark:text-gray-400">
-                            Stripe, Lemon Squeezy, or PayPal. Subscription management with trial periods configured during setup.
+                            Stripe, Lemon Squeezy, or PayPal integration with subscription management built-in.
                         </p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Tech Stack Section -->
-        <div class="py-16 bg-gray-50 dark:bg-gray-900">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-10">
-                    <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Built With</p>
-                </div>
-                <div class="flex flex-wrap justify-center items-center gap-8 md:gap-12">
-                    <div class="text-gray-400 dark:text-gray-500 font-semibold">Laravel 12</div>
-                    <div class="text-gray-400 dark:text-gray-500 font-semibold">Livewire 4</div>
-                    <div class="text-gray-400 dark:text-gray-500 font-semibold">Tailwind CSS 4</div>
-                    <div class="text-gray-400 dark:text-gray-500 font-semibold">Alpine.js</div>
-                    <div class="text-gray-400 dark:text-gray-500 font-semibold">Filament 5</div>
-                    <div class="text-gray-400 dark:text-gray-500 font-semibold">Jetstream</div>
-                </div>
-            </div>
-        </div>
-
         <!-- CTA Section -->
-        <div class="py-24">
+        <div class="py-24 bg-gradient-to-r from-indigo-600 to-purple-600">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-6">
-                    Ready to Build Your SaaS?
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">
+                    Ready to Get Started?
                 </h2>
-                <p class="text-lg text-gray-600 dark:text-gray-400 mb-10">
-                    Get started in minutes with our interactive installer. Configure everything through a beautiful terminal UI.
+                <p class="text-lg text-indigo-100 mb-10">
+                    Join thousands of developers building their next big idea with our platform.
                 </p>
-                <div class="bg-gray-900 dark:bg-gray-800 rounded-xl p-6 text-left font-mono text-sm overflow-x-auto">
-                    <div class="text-gray-400"># Clone and install</div>
-                    <div class="text-green-400 mt-2">$ git clone https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered.git my-saas</div>
-                    <div class="text-green-400">$ cd my-saas && composer install</div>
-                    <div class="text-green-400">$ php setup/UltimateInstaller.php</div>
-                    <div class="text-gray-400 mt-4"># Start building with AI</div>
-                    <div class="text-green-400 mt-2">$ claude</div>
-                </div>
+                @if (Route::has('register'))
+                    <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-indigo-600 bg-white rounded-lg hover:bg-gray-100 shadow-xl transition-all hover:-translate-y-0.5">
+                        Start Building Today
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </a>
+                @endif
             </div>
         </div>
 
         <!-- Footer -->
-        <footer class="py-12 border-t border-gray-200 dark:border-gray-800">
+        <footer class="py-12 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="text-gray-500 dark:text-gray-400 text-sm">
-                        Built with Laravel TALL Stack & Claude Code
+                        &copy; {{ date('Y') }} {{ config('app.name', '{{APP_NAME}}') }}. All rights reserved.
                     </div>
                     <div class="flex gap-6">
-                        <a href="{{ route('terms') ?? '#' }}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                            Terms
-                        </a>
-                        <a href="{{ route('privacy') ?? '#' }}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                            Privacy
-                        </a>
-                        <a href="https://github.com/andreaskviby/laravel-jetstream-tallstack-ai-powered" target="_blank" class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                            GitHub
-                        </a>
+                        @if(Route::has('terms'))
+                            <a href="{{ route('terms') }}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                Terms
+                            </a>
+                        @endif
+                        @if(Route::has('privacy'))
+                            <a href="{{ route('privacy') }}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                Privacy
+                            </a>
+                        @endif
                     </div>
                 </div>
             </div>

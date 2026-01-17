@@ -20,6 +20,10 @@ class UltimateInstaller
     private array $features = [];
     private string $projectPath = '';
     private float $startTime;
+    private bool $cleanInstall = false;
+    private ?string $landingPageTempFile = null;
+    private ?string $landingPageLogFile = null;
+    private $landingPageProcess = null;
 
     private const TOTAL_PHASES = 10;
 
@@ -27,6 +31,42 @@ class UltimateInstaller
     {
         $this->ui = new TerminalUI();
         $this->startTime = microtime(true);
+        $this->parseCommandLineArgs();
+    }
+
+    /**
+     * Parse command line arguments
+     */
+    private function parseCommandLineArgs(): void
+    {
+        global $argv;
+
+        if (in_array('--clean', $argv ?? [], true)) {
+            $this->cleanInstall = true;
+        }
+
+        // Show help if requested
+        if (in_array('--help', $argv ?? [], true) || in_array('-h', $argv ?? [], true)) {
+            $this->showHelp();
+            exit(0);
+        }
+    }
+
+    /**
+     * Show help message
+     */
+    private function showHelp(): void
+    {
+        echo "\n";
+        echo "Laravel TALL Stack AI-Powered Ultimate Installer\n";
+        echo "================================================\n\n";
+        echo "Usage: php setup/UltimateInstaller.php [options]\n\n";
+        echo "Options:\n";
+        echo "  --clean    Backup existing project and reinstall fresh\n";
+        echo "  --help     Show this help message\n\n";
+        echo "Examples:\n";
+        echo "  php setup/UltimateInstaller.php\n";
+        echo "  php setup/UltimateInstaller.php --clean\n\n";
     }
 
     /**
@@ -309,7 +349,8 @@ class UltimateInstaller
 
         if (!$this->ui->confirm("Would you like to generate an AI-powered landing page?", true)) {
             $this->config['landing_page'] = false;
-            $this->ui->info("Skipping landing page generation");
+            $this->config['use_default_landing'] = true;
+            $this->ui->info("Will use default landing page template");
             return;
         }
 
@@ -358,6 +399,184 @@ class UltimateInstaller
         }
 
         $this->features[] = "AI Landing Page Generator";
+
+        // Start background landing page generation immediately
+        $this->startBackgroundLandingPageGeneration();
+    }
+
+    /**
+     * Start landing page generation in background
+     */
+    private function startBackgroundLandingPageGeneration(): void
+    {
+        $apiKey = $this->config['anthropic_api_key'] ?? null;
+
+        if (!$apiKey) {
+            return; // Will use default template
+        }
+
+        // Create temp file for output
+        $this->landingPageTempFile = sys_get_temp_dir() . '/landing_page_' . uniqid() . '.html';
+
+        // Store config in a temp JSON file (avoids escaping issues)
+        $configFile = sys_get_temp_dir() . '/landing_config_' . uniqid() . '.json';
+        $configData = [
+            'api_key' => $apiKey,
+            'app_name' => $this->config['app_name'],
+            'app_description' => $this->config['app_description'] ?? 'A modern SaaS application',
+            'subscription_plans' => $this->config['subscription_plans'] ?? [],
+            'trial_days' => $this->config['trial_days'] ?? null,
+            'output_file' => $this->landingPageTempFile,
+        ];
+        file_put_contents($configFile, json_encode($configData));
+
+        // Create a PHP script to run in background
+        $scriptContent = $this->createLandingPageGeneratorScript($configFile);
+        $scriptFile = sys_get_temp_dir() . '/landing_gen_' . uniqid() . '.php';
+        file_put_contents($scriptFile, $scriptContent);
+
+        // Create log file for debugging
+        $logFile = sys_get_temp_dir() . '/landing_gen_' . uniqid() . '.log';
+        $this->landingPageLogFile = $logFile;
+
+        // Use the same PHP binary that's running this script
+        $phpBinary = PHP_BINARY ?: 'php';
+
+        // Run in background with logging for debugging
+        $command = escapeshellarg($phpBinary) . " " . escapeshellarg($scriptFile) . " > " . escapeshellarg($logFile) . " 2>&1 &";
+        exec($command);
+
+        $this->ui->info("Landing page generation started in background...");
+    }
+
+    /**
+     * Create the landing page generator script
+     */
+    private function createLandingPageGeneratorScript(string $configFile): string
+    {
+        $escapedConfigFile = addslashes($configFile);
+
+        $scriptTemplate = '<?php
+echo "Landing page generator started at " . date("Y-m-d H:i:s") . "\n";
+
+$configFile = "' . $escapedConfigFile . '";
+
+if (!file_exists($configFile)) {
+    echo "ERROR: Config file not found: $configFile\n";
+    exit(1);
+}
+
+$config = json_decode(file_get_contents($configFile), true);
+if (!$config) {
+    echo "ERROR: Could not parse config file\n";
+    exit(1);
+}
+
+echo "Config loaded successfully\n";
+
+$apiKey = $config["api_key"];
+$appName = $config["app_name"];
+$appDescription = $config["app_description"];
+$plans = $config["subscription_plans"];
+$trialDays = $config["trial_days"];
+$outputFile = $config["output_file"];
+
+echo "App name: $appName\n";
+echo "Output file: $outputFile\n";
+
+// Build plans text
+$plansText = "";
+if (!empty($plans)) {
+    $plansText = "\n\nSubscription Plans:\n";
+    foreach ($plans as $plan) {
+        $plansText .= "- " . $plan["name"] . ": $" . $plan["price"] . "/month - " . $plan["description"] . "\n";
+    }
+}
+if ($trialDays) {
+    $plansText .= "\nFree trial period: " . $trialDays . " days\n";
+}
+
+$prompt = "Generate a complete, production-ready landing page (welcome.blade.php) for a SaaS application with the following details:
+
+App Name: " . $appName . "
+
+App Description:
+" . $appDescription . "
+" . $plansText . "
+
+Requirements:
+1. Use Laravel Blade syntax with @vite for assets
+2. Use Tailwind CSS 4 for styling (utility classes)
+3. Use Alpine.js for any interactivity (mobile menu, etc.)
+4. Include: Navigation, Hero, Features (6 features based on description), Pricing (if plans provided), CTA, Footer
+5. Support dark mode with dark: variants
+6. Be fully responsive (mobile-first)
+7. Use Laravel route() helpers for login, register, dashboard, terms, privacy
+8. Write compelling, conversion-focused copy based on the app description
+9. Use modern design with gradients, shadows, and subtle animations
+10. Include @if(View::exists(\'components.cookie-consent\')) <x-cookie-consent /> @endif before closing body
+
+Output ONLY the complete welcome.blade.php file content, starting with <!DOCTYPE html> and ending with </html>. No explanation or markdown code blocks.";
+
+echo "Calling Claude API...\n";
+
+$data = [
+    "model" => "claude-sonnet-4-20250514",
+    "max_tokens" => 8192,
+    "messages" => [
+        ["role" => "user", "content" => $prompt]
+    ]
+];
+
+$ch = curl_init("https://api.anthropic.com/v1/messages");
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => json_encode($data),
+    CURLOPT_HTTPHEADER => [
+        "Content-Type: application/json",
+        "x-api-key: " . $apiKey,
+        "anthropic-version: 2023-06-01"
+    ],
+    CURLOPT_TIMEOUT => 120
+]);
+
+$response = curl_exec($ch);
+$curlError = curl_error($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+echo "HTTP Code: $httpCode\n";
+
+if ($curlError) {
+    echo "CURL Error: $curlError\n";
+    exit(1);
+}
+
+if ($httpCode === 200) {
+    $result = json_decode($response, true);
+    if (isset($result["content"][0]["text"])) {
+        $content = $result["content"][0]["text"];
+        $content = preg_replace(\'/^```(?:blade|php|html)?\n/m\', "", $content);
+        $content = preg_replace(\'/\n```$/m\', "", $content);
+        $written = file_put_contents($outputFile, trim($content));
+        echo "Written $written bytes to $outputFile\n";
+        echo "Landing page generated successfully!\n";
+    } else {
+        echo "ERROR: No content in response\n";
+        echo "Response: " . substr($response, 0, 500) . "\n";
+    }
+} else {
+    echo "ERROR: API returned HTTP $httpCode\n";
+    echo "Response: " . substr($response, 0, 500) . "\n";
+}
+
+// Clean up config file
+@unlink($configFile);
+echo "Completed at " . date("Y-m-d H:i:s") . "\n";
+';
+
+        return $scriptTemplate;
     }
 
     /**
@@ -1140,6 +1359,13 @@ class UltimateInstaller
             'Seeding super admin' => fn() => $this->seedSuperAdmin(),
         ];
 
+        // Add landing page step - either AI generated or default template
+        if ($this->config['landing_page'] ?? false) {
+            $steps['Generating AI landing page'] = fn() => $this->generateAILandingPage();
+        } elseif ($this->config['use_default_landing'] ?? false) {
+            $steps['Installing landing page'] = fn() => $this->copyDefaultLandingPage();
+        }
+
         $completed = 0;
         $total = count($steps);
 
@@ -1254,15 +1480,163 @@ class UltimateInstaller
             $this->features,
             $nextSteps
         );
+
+        // Offer to start development server
+        $this->offerToStartDevServer();
+    }
+
+    /**
+     * Ask user if they want to start the development server
+     */
+    private function offerToStartDevServer(): void
+    {
+        $localEnv = $this->config['local_env'] ?? null;
+
+        // For Herd/Valet, app is already running - just offer to open browser
+        if ($localEnv === 'herd' || $localEnv === 'valet') {
+            echo "\n";
+            $openBrowser = $this->ui->confirm("Would you like to open your app in the browser?", true);
+
+            if ($openBrowser) {
+                $appUrl = $this->config['app_url'];
+                // Use 'open' on macOS to open the browser
+                exec("open \"{$appUrl}\" 2>/dev/null");
+                $this->ui->success("Opening {$appUrl} in your default browser...");
+            }
+
+            return;
+        }
+
+        // For standard setup, offer to start dev server
+        echo "\n";
+        $startServer = $this->ui->confirm("Would you like to start the development server now?", true);
+
+        if ($startServer) {
+            $projectPath = $this->projectPath;
+
+            // Change to project directory
+            chdir($projectPath);
+
+            // Ensure npm packages are installed
+            $this->ui->info("Ensuring npm packages are installed...");
+            passthru("npm install 2>/dev/null");
+            echo "\n";
+
+            $this->ui->info("Starting development server...");
+            echo "\n";
+            $this->ui->warning("Press Ctrl+C to stop the server");
+            echo "\n";
+
+            // Run php artisan serve and npm run dev separately for reliability
+            // Using the full path to node_modules/.bin/vite
+            passthru("npx concurrently -c \"#93c5fd,#fb7185\" \"php artisan serve\" \"npm run dev\" --names=server,vite --kill-others");
+        } else {
+            echo "\n";
+            $this->ui->info("To start the server later, run:");
+            echo "   cd {$this->config['project_name']} && composer dev\n\n";
+        }
     }
 
     // Installation helper methods
 
     private function createProjectDirectory(): void
     {
-        if (!mkdir($this->projectPath, 0755, true) && !is_dir($this->projectPath)) {
-            throw new RuntimeException("Failed to create project directory");
+        // Check if directory already exists
+        if (is_dir($this->projectPath)) {
+            if ($this->cleanInstall) {
+                $this->handleCleanInstall();
+            } else {
+                throw new RuntimeException(
+                    "Directory '{$this->projectPath}' already exists.\n" .
+                    "   Use --clean flag to backup and reinstall: php setup/UltimateInstaller.php --clean"
+                );
+            }
         }
+
+        // Don't create directory here - composer create-project will create it
+        // and it requires the directory to NOT exist
+    }
+
+    /**
+     * Handle clean install by backing up existing project
+     */
+    private function handleCleanInstall(): void
+    {
+        $projectName = $this->config['project_name'];
+        $timestamp = date('Y-m-d_His');
+        $backupPath = $this->projectPath . '_backup_' . $timestamp;
+
+        $this->ui->warning("Directory '{$projectName}' already exists!");
+        echo "\n";
+
+        // Show options
+        echo "  Choose an option:\n";
+        echo "  [1] Backup to '{$projectName}_backup_{$timestamp}' and reinstall\n";
+        echo "  [2] Delete existing directory and reinstall (no backup)\n";
+        echo "  [3] Cancel installation\n";
+        echo "\n";
+
+        $choice = $this->ui->prompt("Enter choice (1/2/3):", "1");
+
+        if ($choice === '3') {
+            $this->ui->info("Installation cancelled.");
+            exit(0);
+        }
+
+        if ($choice === '2') {
+            // Delete without backup
+            $this->ui->warning("Deleting existing project directory...");
+
+            $deleteCommand = "rm -rf " . escapeshellarg($this->projectPath);
+            exec($deleteCommand, $output, $returnCode);
+
+            if ($returnCode !== 0 || is_dir($this->projectPath)) {
+                throw new RuntimeException("Failed to delete existing project directory. Check permissions or close any applications using the folder.");
+            }
+
+            $this->ui->success("Deleted: {$this->projectPath}");
+            echo "\n";
+            return;
+        }
+
+        // Default: Backup and reinstall
+        $this->ui->info("Backing up existing project...");
+
+        // Try rename first
+        if (@rename($this->projectPath, $backupPath)) {
+            $this->ui->success("Backed up to: {$backupPath}");
+            echo "\n";
+            return;
+        }
+
+        // Rename failed, try with shell command (handles cross-device moves)
+        $this->ui->info("Using alternative backup method...");
+        $moveCommand = "mv " . escapeshellarg($this->projectPath) . " " . escapeshellarg($backupPath);
+        exec($moveCommand, $output, $returnCode);
+
+        if ($returnCode !== 0 || is_dir($this->projectPath)) {
+            // Last resort: ask to delete instead
+            $this->ui->warning("Backup failed. The directory may be in use or have permission issues.");
+            $deleteInstead = $this->ui->confirm("Would you like to delete the existing directory instead (no backup)?", false);
+
+            if ($deleteInstead) {
+                $deleteCommand = "rm -rf " . escapeshellarg($this->projectPath);
+                exec($deleteCommand, $output, $returnCode);
+
+                if ($returnCode !== 0 || is_dir($this->projectPath)) {
+                    throw new RuntimeException("Failed to remove existing project. Please close any applications using the folder and try again.");
+                }
+
+                $this->ui->success("Deleted existing directory");
+                echo "\n";
+                return;
+            }
+
+            throw new RuntimeException("Cannot proceed - existing directory could not be moved or deleted.");
+        }
+
+        $this->ui->success("Backed up to: {$backupPath}");
+        echo "\n";
     }
 
     private function installLaravel(): void
@@ -1295,7 +1669,42 @@ class UltimateInstaller
 
         // Create database if needed
         if ($this->config['create_database'] ?? false) {
-            // Database creation logic here
+            $this->createDatabaseForProject();
+        }
+    }
+
+    /**
+     * Create the database for the project
+     */
+    private function createDatabaseForProject(): void
+    {
+        $driver = $this->config['database_driver'];
+
+        if ($driver === 'sqlite') {
+            // SQLite doesn't need database creation
+            return;
+        }
+
+        $host = $this->config['database_host'];
+        $port = $this->config['database_port'];
+        $database = $this->config['database_name'];
+        $username = $this->config['database_username'];
+        $password = $this->config['database_password'];
+
+        try {
+            // Connect without database to create it
+            $dsn = "{$driver}:host={$host};port={$port};charset=utf8mb4";
+            $pdo = new PDO($dsn, $username, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+
+            // Create database if it doesn't exist
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
+            $this->ui->success("Database '{$database}' created successfully");
+        } catch (PDOException $e) {
+            $this->ui->warning("Could not create database: " . $e->getMessage());
+            $this->ui->info("You may need to create the database manually: CREATE DATABASE {$database}");
         }
     }
 
@@ -1685,6 +2094,205 @@ BLADE;
 BLADE;
 
         file_put_contents($componentPath, $content);
+    }
+
+    /**
+     * Generate AI-powered landing page using Claude API
+     */
+    private function generateAILandingPage(): void
+    {
+        // Check if we started background landing page generation
+        if ($this->landingPageTempFile) {
+            // Wait for the background process to complete
+            $maxWait = 90; // seconds (API can be slow)
+            $waited = 0;
+
+            $this->ui->info("Waiting for AI landing page generation to complete...");
+            echo "  ";
+
+            while ($waited < $maxWait) {
+                clearstatcache(true, $this->landingPageTempFile);
+
+                if (file_exists($this->landingPageTempFile)) {
+                    $content = file_get_contents($this->landingPageTempFile);
+
+                    // Check if content is complete (ends with </html>)
+                    if (!empty($content) && str_contains($content, '</html>')) {
+                        // Validate it looks like a blade file
+                        if (str_starts_with(trim($content), '<!DOCTYPE html>') || str_starts_with(trim($content), '<html')) {
+                            echo "\n";
+                            file_put_contents(
+                                "{$this->projectPath}/resources/views/welcome.blade.php",
+                                trim($content)
+                            );
+                            // Clean up temp file
+                            @unlink($this->landingPageTempFile);
+                            $this->ui->success("AI landing page generated successfully!");
+                            return;
+                        }
+                    }
+                }
+
+                sleep(2);
+                $waited += 2;
+                echo ".";
+            }
+            echo "\n";
+            $this->ui->warning("Background generation timed out after {$maxWait} seconds");
+
+            // Show debug info from log file if available
+            if ($this->landingPageLogFile && file_exists($this->landingPageLogFile)) {
+                $logContent = file_get_contents($this->landingPageLogFile);
+                if (!empty(trim($logContent))) {
+                    $this->ui->info("Background process log:");
+                    echo "  " . substr($logContent, 0, 500) . "\n";
+                }
+            }
+        }
+
+        // If no API key or background generation didn't happen, use default
+        if (!($this->config['anthropic_api_key'] ?? null)) {
+            $this->ui->warning("No API key found - using default landing page template");
+            $this->copyDefaultLandingPage();
+            return;
+        }
+
+        // Fallback: try synchronous generation if background failed
+        $this->ui->warning("Background generation incomplete - trying synchronous generation...");
+        $this->generateLandingPageSync();
+    }
+
+    /**
+     * Synchronous landing page generation (fallback)
+     */
+    private function generateLandingPageSync(): void
+    {
+        $appName = $this->config['app_name'];
+        $appDescription = $this->config['app_description'] ?? 'A modern SaaS application';
+        $plans = $this->config['subscription_plans'] ?? [];
+        $trialDays = $this->config['trial_days'] ?? null;
+
+        $plansText = '';
+        if (!empty($plans)) {
+            $plansText = "\n\nSubscription Plans:\n";
+            foreach ($plans as $plan) {
+                $plansText .= "- {$plan['name']}: \${$plan['price']}/month - {$plan['description']}\n";
+            }
+        }
+
+        if ($trialDays) {
+            $plansText .= "\nFree trial period: {$trialDays} days\n";
+        }
+
+        $prompt = <<<PROMPT
+Generate a complete, production-ready landing page (welcome.blade.php) for a SaaS application with the following details:
+
+App Name: {$appName}
+
+App Description:
+{$appDescription}
+{$plansText}
+
+Requirements:
+1. Use Laravel Blade syntax with @vite for assets
+2. Use Tailwind CSS 4 for styling (utility classes)
+3. Use Alpine.js for any interactivity (mobile menu, etc.)
+4. Include: Navigation, Hero, Features (6 features based on description), Pricing (if plans provided), CTA, Footer
+5. Support dark mode with dark: variants
+6. Be fully responsive (mobile-first)
+7. Use Laravel route() helpers for login, register, dashboard, terms, privacy
+8. Write compelling, conversion-focused copy based on the app description
+9. Use modern design with gradients, shadows, and subtle animations
+10. Include @if(View::exists('components.cookie-consent')) <x-cookie-consent /> @endif before closing body
+
+Output ONLY the complete welcome.blade.php file content, starting with <!DOCTYPE html> and ending with </html>. No explanation or markdown code blocks.
+PROMPT;
+
+        $response = $this->callClaudeAPI($prompt);
+
+        if ($response) {
+            $content = $response;
+            $content = preg_replace('/^```(?:blade|php|html)?\n/m', '', $content);
+            $content = preg_replace('/\n```$/m', '', $content);
+            $content = trim($content);
+
+            if (str_starts_with($content, '<!DOCTYPE html>') || str_starts_with($content, '<html')) {
+                file_put_contents(
+                    "{$this->projectPath}/resources/views/welcome.blade.php",
+                    $content
+                );
+                $this->ui->success("AI landing page generated successfully!");
+                return;
+            }
+        }
+
+        $this->ui->warning("AI generation failed - using default landing page");
+        $this->copyDefaultLandingPage();
+    }
+
+    /**
+     * Call Claude API to generate content
+     */
+    private function callClaudeAPI(string $prompt): ?string
+    {
+        $apiKey = $this->config['anthropic_api_key'];
+
+        $data = [
+            'model' => 'claude-sonnet-4-20250514',
+            'max_tokens' => 8192,
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => $prompt
+                ]
+            ]
+        ];
+
+        $ch = curl_init('https://api.anthropic.com/v1/messages');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'x-api-key: ' . $apiKey,
+                'anthropic-version: 2023-06-01'
+            ],
+            CURLOPT_TIMEOUT => 120
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            return null;
+        }
+
+        $result = json_decode($response, true);
+
+        if (isset($result['content'][0]['text'])) {
+            return $result['content'][0]['text'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Copy the default landing page template
+     */
+    private function copyDefaultLandingPage(): void
+    {
+        $stubPath = __DIR__ . '/stubs/welcome.blade.stub';
+
+        if (file_exists($stubPath)) {
+            $content = file_get_contents($stubPath);
+            $content = str_replace('{{APP_NAME}}', $this->config['app_name'], $content);
+            file_put_contents(
+                "{$this->projectPath}/resources/views/welcome.blade.php",
+                $content
+            );
+        }
     }
 
     private function setupTodoSystem(): void
