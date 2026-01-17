@@ -10,6 +10,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
 
 class Team extends JetstreamTeam
 {
+    /** @use HasFactory<\Database\Factories\TeamFactory> */
     use HasFactory;
 
     /**
@@ -55,7 +56,7 @@ class Team extends JetstreamTeam
      */
     public function getLogoUrlAttribute(): ?string
     {
-        return $this->logo_path 
+        return $this->logo_path
             ? asset('storage/' . $this->logo_path)
             : null;
     }
