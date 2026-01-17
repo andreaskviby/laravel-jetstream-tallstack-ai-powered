@@ -350,15 +350,213 @@ class UltimateInstaller
 
         $createNew = $this->ui->confirm("Create a new database?", true);
 
-        $this->config['database_host'] = $this->ui->prompt("Database host:", "127.0.0.1");
-        $this->config['database_port'] = $this->ui->prompt("Database port:", $this->config['database_driver'] === 'pgsql' ? "5432" : "3306");
-        $this->config['database_name'] = $this->ui->prompt("Database name:", str_replace('-', '_', $this->config['project_name']));
-        $this->config['database_username'] = $this->ui->prompt("Database username:", "root");
-        $this->config['database_password'] = $this->ui->promptPassword("Database password:");
+        $connectionValid = false;
+        $attempts = 0;
+        $maxAttempts = 3;
+
+        while (!$connectionValid && $attempts < $maxAttempts) {
+            if ($attempts > 0) {
+                echo "\n";
+                $this->ui->warning("Let's try again. Please check your database credentials.");
+                echo "\n";
+            }
+
+            $this->config['database_host'] = $this->ui->prompt("Database host:", "127.0.0.1");
+
+            // Validate host format
+            if (!$this->isValidHost($this->config['database_host'])) {
+                $this->ui->error("Invalid host format. Use IP address (e.g., 127.0.0.1) or valid hostname (e.g., localhost, db.example.com)");
+                $attempts++;
+                continue;
+            }
+
+            $this->config['database_port'] = $this->ui->prompt("Database port:", $this->config['database_driver'] === 'pgsql' ? "5432" : "3306");
+
+            // Validate port
+            if (!is_numeric($this->config['database_port']) || $this->config['database_port'] < 1 || $this->config['database_port'] > 65535) {
+                $this->ui->error("Invalid port number. Must be between 1 and 65535.");
+                $attempts++;
+                continue;
+            }
+
+            $this->config['database_name'] = $this->ui->prompt("Database name:", str_replace('-', '_', $this->config['project_name']));
+            $this->config['database_username'] = $this->ui->prompt("Database username:", "root");
+            $this->config['database_password'] = $this->ui->promptPassword("Database password:");
+
+            // Test the connection
+            echo "\n";
+            $this->ui->info("Testing database connection...");
+
+            $connectionResult = $this->testDatabaseConnection();
+
+            if ($connectionResult['success']) {
+                $this->ui->success("Database connection successful!");
+                $connectionValid = true;
+
+                // Create database if requested and it doesn't exist
+                if ($createNew && !$connectionResult['database_exists']) {
+                    $this->ui->info("Creating database '{$this->config['database_name']}'...");
+                    if ($this->createDatabase()) {
+                        $this->ui->success("Database created successfully!");
+                    } else {
+                        $this->ui->warning("Could not create database automatically. Please create it manually.");
+                    }
+                }
+            } else {
+                $this->ui->error("Connection failed: " . $connectionResult['error']);
+                $this->ui->showInfoBox("COMMON ISSUES", [
+                    "",
+                    "• Host: Use '127.0.0.1' instead of 'localhost' for MySQL",
+                    "• Make sure your database server is running",
+                    "• Check that username and password are correct",
+                    "• Verify the port number (MySQL: 3306, PostgreSQL: 5432)",
+                    "",
+                ], 'warning');
+                $attempts++;
+            }
+        }
+
+        if (!$connectionValid) {
+            $this->ui->error("Failed to establish database connection after {$maxAttempts} attempts.");
+
+            if ($this->ui->confirm("Continue anyway with current settings?", false)) {
+                $this->ui->warning("Proceeding without verified connection. You may need to fix settings manually.");
+            } else {
+                $this->ui->info("Installation cancelled. Please fix your database settings and try again.");
+                exit(1);
+            }
+        }
 
         $this->config['create_database'] = $createNew;
 
         $this->ui->success("Database configuration saved");
+    }
+
+    /**
+     * Validate host format
+     */
+    private function isValidHost(string $host): bool
+    {
+        // Allow localhost
+        if ($host === 'localhost') {
+            return true;
+        }
+
+        // Allow valid IP addresses
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return true;
+        }
+
+        // Allow valid domain names (basic check)
+        if (preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/', $host)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Test database connection
+     */
+    private function testDatabaseConnection(): array
+    {
+        $driver = $this->config['database_driver'];
+        $host = $this->config['database_host'];
+        $port = $this->config['database_port'];
+        $database = $this->config['database_name'];
+        $username = $this->config['database_username'];
+        $password = $this->config['database_password'];
+
+        try {
+            // First, try to connect to the server (without specifying database)
+            if ($driver === 'mysql') {
+                $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
+            } else {
+                $dsn = "pgsql:host={$host};port={$port}";
+            }
+
+            $pdo = new PDO($dsn, $username, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_TIMEOUT => 5,
+            ]);
+
+            // Check if database exists
+            $databaseExists = false;
+            if ($driver === 'mysql') {
+                $stmt = $pdo->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = " . $pdo->quote($database));
+                $databaseExists = $stmt->fetchColumn() !== false;
+            } else {
+                $stmt = $pdo->query("SELECT datname FROM pg_database WHERE datname = " . $pdo->quote($database));
+                $databaseExists = $stmt->fetchColumn() !== false;
+            }
+
+            return [
+                'success' => true,
+                'database_exists' => $databaseExists,
+                'error' => null,
+            ];
+
+        } catch (PDOException $e) {
+            $errorMessage = $e->getMessage();
+
+            // Provide more helpful error messages
+            if (str_contains($errorMessage, 'getaddrinfo') || str_contains($errorMessage, 'nodename nor servname')) {
+                $errorMessage = "Cannot resolve host '{$host}'. Check if the hostname is correct.";
+            } elseif (str_contains($errorMessage, 'Connection refused')) {
+                $errorMessage = "Connection refused. Is the database server running on {$host}:{$port}?";
+            } elseif (str_contains($errorMessage, 'Access denied')) {
+                $errorMessage = "Access denied. Check username and password.";
+            }
+
+            return [
+                'success' => false,
+                'database_exists' => false,
+                'error' => $errorMessage,
+            ];
+        }
+    }
+
+    /**
+     * Create the database
+     */
+    private function createDatabase(): bool
+    {
+        $driver = $this->config['database_driver'];
+        $host = $this->config['database_host'];
+        $port = $this->config['database_port'];
+        $database = $this->config['database_name'];
+        $username = $this->config['database_username'];
+        $password = $this->config['database_password'];
+
+        try {
+            if ($driver === 'mysql') {
+                $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
+            } else {
+                $dsn = "pgsql:host={$host};port={$port}";
+            }
+
+            $pdo = new PDO($dsn, $username, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+
+            // Validate database name (alphanumeric and underscores only)
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $database)) {
+                $this->ui->error("Invalid database name. Use only letters, numbers, and underscores.");
+                return false;
+            }
+
+            if ($driver === 'mysql') {
+                $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            } else {
+                // PostgreSQL doesn't support IF NOT EXISTS in CREATE DATABASE
+                $pdo->exec("CREATE DATABASE \"{$database}\"");
+            }
+
+            return true;
+
+        } catch (PDOException $e) {
+            return false;
+        }
     }
 
     /**
