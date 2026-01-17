@@ -1,0 +1,128 @@
+<?php
+
+namespace App\Http\Livewire;
+
+use App\Models\Todo;
+use App\Services\ResearcherAgentService;
+use Livewire\Component;
+use Livewire\WithPagination;
+
+class TodoManager extends Component
+{
+    use WithPagination;
+
+    public $showCreateModal = false;
+    public $showViewModal = false;
+    public $title = '';
+    public $description = '';
+    public $type = 'landing_page';
+    public $selectedTodo = null;
+
+    protected $rules = [
+        'title' => 'required|string|max:255',
+        'description' => 'required|string|min:10',
+        'type' => 'required|in:landing_page,research',
+    ];
+
+    public function render()
+    {
+        $todos = Todo::where('user_id', auth()->id())
+            ->when(auth()->user()->currentTeam, function ($query) {
+                $query->where('team_id', auth()->user()->currentTeam->id);
+            })
+            ->latest()
+            ->paginate(10);
+
+        return view('livewire.todo-manager', [
+            'todos' => $todos,
+        ]);
+    }
+
+    public function openCreateModal()
+    {
+        $this->resetValidation();
+        $this->reset(['title', 'description', 'type']);
+        $this->showCreateModal = true;
+    }
+
+    public function closeCreateModal()
+    {
+        $this->showCreateModal = false;
+        $this->reset(['title', 'description', 'type']);
+    }
+
+    public function createTodo()
+    {
+        $this->validate();
+
+        $todo = Todo::create([
+            'user_id' => auth()->id(),
+            'team_id' => auth()->user()->currentTeam?->id,
+            'title' => $this->title,
+            'description' => $this->description,
+            'type' => $this->type,
+            'status' => 'pending',
+        ]);
+
+        $this->closeCreateModal();
+        
+        // Dispatch job to process the todo
+        $this->processTodo($todo);
+        
+        session()->flash('message', 'Todo created successfully! Processing will start shortly.');
+    }
+
+    public function processTodo(Todo $todo)
+    {
+        $todo->update(['status' => 'processing']);
+
+        $agentService = app(ResearcherAgentService::class);
+
+        if ($todo->type === 'landing_page') {
+            $result = $agentService->generateLandingPage($todo->description);
+        } else {
+            $result = $agentService->research($todo->description);
+        }
+
+        if ($result['success']) {
+            $todo->update([
+                'status' => 'completed',
+                'result' => $result['html'] ?? $result['result'] ?? '',
+                'metadata' => $result['metadata'] ?? [],
+            ]);
+        } else {
+            $todo->update([
+                'status' => 'failed',
+                'metadata' => ['error' => $result['error']],
+            ]);
+        }
+    }
+
+    public function viewTodo($todoId)
+    {
+        $this->selectedTodo = Todo::where('user_id', auth()->id())->findOrFail($todoId);
+        $this->showViewModal = true;
+    }
+
+    public function closeViewModal()
+    {
+        $this->showViewModal = false;
+        $this->selectedTodo = null;
+    }
+
+    public function deleteTodo($todoId)
+    {
+        $todo = Todo::where('user_id', auth()->id())->findOrFail($todoId);
+        $todo->delete();
+
+        session()->flash('message', 'Todo deleted successfully!');
+    }
+
+    public function retryTodo($todoId)
+    {
+        $todo = Todo::where('user_id', auth()->id())->findOrFail($todoId);
+        $this->processTodo($todo);
+
+        session()->flash('message', 'Todo is being reprocessed!');
+    }
+}

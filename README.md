@@ -19,6 +19,8 @@ A comprehensive starter kit for quickly bootstrapping Laravel projects with Jets
 
 🤖 **AI Integration**
 - Claude AI API integration ready
+- AI-powered landing page generator
+- Researcher agent for creating SaaS landing pages
 - OAuth login support for Claude
 - Pre-configured for AI-powered features
 
@@ -163,6 +165,18 @@ Replaces traditional password authentication:
 - 10-minute expiration (configurable)
 - Prefilled codes for local development
 - Secure code storage and verification
+
+### AI Landing Page Generator
+
+Create stunning landing pages for your SaaS ideas using AI:
+- **Automated Generation**: Describe your idea and let AI create the page
+- **Professional Design**: Tailwind CSS-styled, responsive pages
+- **Complete Sections**: Hero, features, benefits, pricing, and more
+- **Task Management**: Save, view, and manage generated pages
+- **Team Collaboration**: Share landing pages within your team
+- **Retry Failed Tasks**: Automatic retry on generation failures
+
+See `setup/stubs/TODO_FEATURE_README.stub` for detailed documentation.
 
 ### TALL Stack
 

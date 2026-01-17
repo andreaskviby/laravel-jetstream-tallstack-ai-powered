@@ -1,0 +1,166 @@
+<?php
+
+namespace App\Services;
+
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class ResearcherAgentService
+{
+    private $apiKey;
+    private $model;
+
+    public function __construct()
+    {
+        $this->apiKey = config('services.claude.api_key');
+        $this->model = config('services.claude.model', 'claude-3-5-sonnet-20241022');
+    }
+
+    /**
+     * Generate landing page content based on SaaS idea description.
+     */
+    public function generateLandingPage(string $description): array
+    {
+        if (empty($this->apiKey)) {
+            return [
+                'success' => false,
+                'error' => 'Claude API key not configured. Please set CLAUDE_API_KEY in your .env file.',
+            ];
+        }
+
+        try {
+            $prompt = $this->buildLandingPagePrompt($description);
+            
+            $response = Http::withHeaders([
+                'x-api-key' => $this->apiKey,
+                'anthropic-version' => '2023-06-01',
+                'content-type' => 'application/json',
+            ])->timeout(60)->post('https://api.anthropic.com/v1/messages', [
+                'model' => $this->model,
+                'max_tokens' => 4096,
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => $prompt,
+                    ],
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $content = $data['content'][0]['text'] ?? '';
+                
+                return [
+                    'success' => true,
+                    'html' => $content,
+                    'metadata' => [
+                        'model' => $this->model,
+                        'tokens_used' => $data['usage'] ?? null,
+                    ],
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error' => 'Failed to generate landing page: ' . $response->body(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('ResearcherAgentService error: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'error' => 'An error occurred: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Build the prompt for landing page generation.
+     */
+    private function buildLandingPagePrompt(string $description): string
+    {
+        return <<<PROMPT
+You are an expert landing page designer and copywriter. Create a beautiful, modern, and conversion-optimized landing page for the following SaaS idea:
+
+{$description}
+
+Please generate a complete HTML landing page that includes:
+1. A compelling hero section with headline and subheadline
+2. Key features section (3-6 features)
+3. Benefits section explaining the value proposition
+4. Social proof section (testimonials placeholder)
+5. Pricing section (3 tiers: Starter, Professional, Enterprise)
+6. Call-to-action sections throughout
+7. Footer with links
+
+Requirements:
+- Use Tailwind CSS classes for styling (compatible with Tailwind CSS 3.x)
+- Make it responsive (mobile-first design)
+- Use modern, clean design principles
+- Include proper semantic HTML
+- Add engaging copy that speaks to the target audience
+- Use appropriate colors and spacing
+- Include SVG icons where appropriate (use heroicons style or simple SVG shapes)
+
+Return ONLY the HTML code without any markdown formatting or code blocks. Start with <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100"> and include all content within it.
+PROMPT;
+    }
+
+    /**
+     * Research a topic and provide insights.
+     */
+    public function research(string $topic): array
+    {
+        if (empty($this->apiKey)) {
+            return [
+                'success' => false,
+                'error' => 'Claude API key not configured.',
+            ];
+        }
+
+        try {
+            $prompt = "Research and provide detailed insights about: {$topic}\n\nProvide a comprehensive overview including key points, market analysis, and recommendations.";
+            
+            $response = Http::withHeaders([
+                'x-api-key' => $this->apiKey,
+                'anthropic-version' => '2023-06-01',
+                'content-type' => 'application/json',
+            ])->timeout(60)->post('https://api.anthropic.com/v1/messages', [
+                'model' => $this->model,
+                'max_tokens' => 2048,
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => $prompt,
+                    ],
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $content = $data['content'][0]['text'] ?? '';
+                
+                return [
+                    'success' => true,
+                    'result' => $content,
+                    'metadata' => [
+                        'model' => $this->model,
+                        'tokens_used' => $data['usage'] ?? null,
+                    ],
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error' => 'Failed to research topic: ' . $response->body(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('ResearcherAgentService research error: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'error' => 'An error occurred: ' . $e->getMessage(),
+            ];
+        }
+    }
+}
