@@ -165,15 +165,27 @@
                                 <div class="mb-4">
                                     <div class="flex justify-between items-center mb-2">
                                         <h4 class="text-sm font-medium text-gray-700">Generated Landing Page</h4>
-                                        <button onclick="navigator.clipboard.writeText(document.getElementById('landing-page-content').innerHTML)" class="text-sm text-indigo-600 hover:text-indigo-800">
+                                        <button onclick="copyLandingPageHtml()" class="text-sm text-indigo-600 hover:text-indigo-800">
                                             Copy HTML
                                         </button>
                                     </div>
                                     <div class="border rounded-lg overflow-hidden">
+                                        <!-- NOTE: Using {!! !!} to render AI-generated HTML. This is intentional as we want to display 
+                                             the landing page, but be aware this content comes from an AI service. In production, 
+                                             consider additional sanitization if you don't fully trust the AI output. -->
                                         <div id="landing-page-content" class="max-h-96 overflow-y-auto">
                                             {!! $selectedTodo->result !!}
                                         </div>
                                     </div>
+                                    <textarea id="landing-page-source" class="hidden">{{ $selectedTodo->result }}</textarea>
+                                    <script>
+                                        function copyLandingPageHtml() {
+                                            const source = document.getElementById('landing-page-source');
+                                            source.select();
+                                            document.execCommand('copy');
+                                            alert('HTML copied to clipboard!');
+                                        }
+                                    </script>
                                 </div>
                             @else
                                 <div class="mb-4">

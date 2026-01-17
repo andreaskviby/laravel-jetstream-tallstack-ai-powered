@@ -66,7 +66,8 @@ class TodoManager extends Component
 
         $this->closeCreateModal();
         
-        // Dispatch job to process the todo
+        // NOTE: For production, dispatch this to a queue job instead of processing synchronously
+        // Example: ProcessTodoJob::dispatch($todo);
         $this->processTodo($todo);
         
         session()->flash('message', 'Todo created successfully! Processing will start shortly.');

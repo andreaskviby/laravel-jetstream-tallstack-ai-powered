@@ -34,7 +34,7 @@ echo ""
 echo -e "${GREEN}Creating directories...${NC}"
 mkdir -p "$PROJECT_ROOT/app/Models"
 mkdir -p "$PROJECT_ROOT/app/Services"
-mkdir -p "$PROJECT_ROOT/app/Http/Livewire"
+mkdir -p "$PROJECT_ROOT/app/Http/Livewire"  # Legacy path for Laravel 10 and Jetstream compatibility
 mkdir -p "$PROJECT_ROOT/resources/views/livewire"
 mkdir -p "$PROJECT_ROOT/resources/views/todos"
 mkdir -p "$PROJECT_ROOT/database/migrations"

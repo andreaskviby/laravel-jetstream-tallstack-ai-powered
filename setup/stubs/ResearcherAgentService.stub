@@ -76,6 +76,10 @@ class ResearcherAgentService
 
     /**
      * Build the prompt for landing page generation.
+     * 
+     * NOTE: This prompt specifies Tailwind CSS 3.x classes. If you upgrade Tailwind or want to use
+     * a different CSS framework, modify this prompt accordingly. The prompt can also be customized
+     * to match your brand guidelines or specific design preferences.
      */
     private function buildLandingPagePrompt(string $description): string
     {
