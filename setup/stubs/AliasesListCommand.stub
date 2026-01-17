@@ -1,0 +1,174 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+
+class AliasesListCommand extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'aliases:list';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'List all available terminal aliases for this project';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle()
+    {
+        $this->info('═══════════════════════════════════════════════════════════');
+        $this->line('<fg=cyan;options=bold>Laravel Jetstream TALL Stack - Project Aliases</>');
+        $this->info('═══════════════════════════════════════════════════════════');
+        $this->newLine();
+
+        // base_path() is used here as this command runs within Laravel where the helper is always available
+        $aliasFile = base_path('aliases.sh');
+        
+        if (!file_exists($aliasFile)) {
+            $this->error('Aliases file not found!');
+            $this->warn('Expected location: ' . $aliasFile);
+            $this->newLine();
+            $this->info('To install aliases, ensure aliases.sh is in your project root.');
+            return Command::FAILURE;
+        }
+
+        $this->info('✓ Aliases file found at: ' . $aliasFile);
+        $this->newLine();
+        
+        $this->displayAliasSection('Git Aliases', [
+            'gs' => 'git status',
+            'ga' => 'git add',
+            'gaa' => 'git add --all',
+            'gc' => 'git commit',
+            'gcm' => 'git commit -m',
+            'gp' => 'git push',
+            'gpl' => 'git pull',
+            'gco' => 'git checkout',
+            'gb' => 'git branch',
+            'gd' => 'git diff',
+            'gl' => 'git log (oneline graph)',
+            'gll' => 'git log (detailed graph)',
+        ]);
+
+        $this->displayAliasSection('PHP Artisan Aliases', [
+            'pa' => 'php artisan',
+            'pam' => 'php artisan migrate',
+            'pamf' => 'php artisan migrate:fresh',
+            'pams' => 'php artisan migrate:fresh --seed',
+            'par' => 'php artisan migrate:rollback',
+            'pads' => 'php artisan db:seed',
+            'pac' => 'php artisan cache:clear',
+            'pacc' => 'php artisan config:clear',
+            'parc' => 'php artisan route:clear',
+            'pavc' => 'php artisan view:clear',
+            'pao' => 'php artisan optimize',
+            'paoc' => 'php artisan optimize:clear',
+            'pat' => 'php artisan test',
+            'paqw' => 'php artisan queue:work',
+            'paql' => 'php artisan queue:listen',
+            'paqr' => 'php artisan queue:restart',
+            'pas' => 'php artisan serve',
+            'palist' => 'php artisan list',
+            'pamm' => 'php artisan make:model',
+            'pamc' => 'php artisan make:controller',
+            'pamig' => 'php artisan make:migration',
+            'pase' => 'php artisan make:seeder',
+            'pafa' => 'php artisan make:factory',
+            'papol' => 'php artisan make:policy',
+            'pacom' => 'php artisan make:command',
+            'paevent' => 'php artisan make:event',
+            'palist-aliases' => 'php artisan aliases:list',
+        ]);
+
+        $this->displayAliasSection('Composer Aliases', [
+            'c' => 'composer',
+            'ci' => 'composer install',
+            'cu' => 'composer update',
+            'cr' => 'composer require',
+            'crd' => 'composer require --dev',
+            'crm' => 'composer remove',
+            'cdu' => 'composer dump-autoload',
+            'cdo' => 'composer dump-autoload -o',
+        ]);
+
+        $this->displayAliasSection('NPM Aliases', [
+            'ni' => 'npm install',
+            'nid' => 'npm install --save-dev',
+            'nu' => 'npm update',
+            'nr' => 'npm run',
+            'nrd' => 'npm run dev',
+            'nrb' => 'npm run build',
+            'nrw' => 'npm run watch',
+            'nrt' => 'npm run test',
+        ]);
+
+        $this->displayAliasSection('Testing Aliases', [
+            'test' => 'php artisan test',
+            'testf' => 'php artisan test --filter',
+            'pest' => './vendor/bin/pest',
+            'pestf' => './vendor/bin/pest --filter',
+            'pint' => './vendor/bin/pint (code style)',
+            'pintd' => './vendor/bin/pint --dirty',
+        ]);
+
+        $this->displayAliasSection('Docker/Sail Aliases', [
+            'sail' => './vendor/bin/sail',
+            'sailup' => './vendor/bin/sail up -d',
+            'saildown' => './vendor/bin/sail down',
+            'sailr' => './vendor/bin/sail restart',
+        ]);
+
+        $this->displayAliasSection('Utility Aliases', [
+            'art' => 'php artisan',
+            'serve' => 'php artisan serve',
+            'fresh' => 'php artisan migrate:fresh --seed',
+            'tinker' => 'php artisan tinker',
+        ]);
+
+        $this->newLine();
+        $this->info('═══════════════════════════════════════════════════════════');
+        $this->line('<fg=green;options=bold>How to Use These Aliases</>');
+        $this->info('═══════════════════════════════════════════════════════════');
+        $this->newLine();
+        
+        $this->line('<fg=yellow>To load aliases in your current terminal session:</>');
+        $this->line('  <fg=cyan>source aliases.sh</>');
+        $this->newLine();
+        
+        $this->line('<fg=yellow>To load aliases automatically (add to ~/.zshrc or ~/.bashrc):</>');
+        $this->line('  <fg=cyan>echo "source ' . $aliasFile . '" >> ~/.zshrc</>');
+        $this->line('  <fg=gray>Then restart your terminal or run: source ~/.zshrc</>');
+        $this->newLine();
+        
+        $this->line('<fg=yellow>To load aliases for this session only:</>');
+        $this->line('  <fg=cyan>cd ' . dirname($aliasFile) . '</>');
+        $this->line('  <fg=cyan>source aliases.sh</>');
+        $this->newLine();
+
+        return Command::SUCCESS;
+    }
+
+    /**
+     * Display a section of aliases.
+     */
+    private function displayAliasSection(string $title, array $aliases)
+    {
+        $this->line('<fg=yellow;options=bold>' . $title . '</>');
+        $this->newLine();
+
+        foreach ($aliases as $alias => $description) {
+            $this->line(sprintf('  <fg=green>%-20s</> <fg=gray>→</> %s', $alias, $description));
+        }
+
+        $this->newLine();
+    }
+}
