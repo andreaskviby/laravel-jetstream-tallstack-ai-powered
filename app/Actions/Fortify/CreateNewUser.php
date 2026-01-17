@@ -26,6 +26,7 @@ class CreateNewUser implements CreatesNewUsers
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => $this->passwordRules(),
+            'team_name' => ['required', 'string', 'max:255'],
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
         ])->validate();
 
@@ -37,27 +38,27 @@ class CreateNewUser implements CreatesNewUsers
             ]), function (User $user) use ($input) {
                 // Check if the user has pending team invitations
                 $invitations = Jetstream::teamInvitationModel()::where('email', $input['email'])->get();
-                
+
                 if ($invitations->isNotEmpty()) {
                     // If user has pending invitations, accept them and skip personal team creation
                     $this->acceptPendingInvitations($user, $invitations);
                 } else {
-                    // Otherwise, create a personal team
-                    $this->createTeam($user);
+                    // Otherwise, create a team with the provided name
+                    $this->createTeam($user, $input['team_name']);
                 }
             });
         });
     }
 
     /**
-     * Create a personal team for the user.
+     * Create a team for the user with the provided name.
      */
-    protected function createTeam(User $user): void
+    protected function createTeam(User $user, string $teamName): void
     {
         $user->ownedTeams()->save(Team::forceCreate([
             'user_id' => $user->id,
-            'name' => explode(' ', $user->name, 2)[0]."'s Team",
-            'personal_team' => true,
+            'name' => $teamName,
+            'personal_team' => false,
         ]));
     }
 
@@ -69,11 +70,11 @@ class CreateNewUser implements CreatesNewUsers
         foreach ($invitations as $invitation) {
             // Add the user to the team
             $invitation->team->users()->attach($user, ['role' => $invitation->role]);
-            
+
             // Delete the invitation
             $invitation->delete();
         }
-        
+
         // Set the user's current team to the first team they were invited to
         if ($invitations->isNotEmpty()) {
             $user->forceFill([
