@@ -318,7 +318,14 @@ class CreateLogoCommand extends Command
             $this->newLine();
         }
 
-        $allPassed = array_reduce($report, fn($carry, $test) => $carry && $test['passes'], true);
+        // Check if all tests passed
+        $allPassed = true;
+        foreach ($report as $test) {
+            if (!$test['passes']) {
+                $allPassed = false;
+                break;
+            }
+        }
         
         if ($allPassed) {
             $this->info('✓ Your palette meets WCAG 2.1 accessibility standards!');

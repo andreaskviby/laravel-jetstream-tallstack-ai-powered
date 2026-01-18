@@ -214,9 +214,9 @@ class BrandColorService
         } else {
             $q = $l < 0.5 ? $l * (1 + $s) : $l + $s - $l * $s;
             $p = 2 * $l - $q;
-            $r = $this->hueToRgb($p, $q, $h + 1/3);
+            $r = $this->hueToRgb($p, $q, $h + self::HUE_FRACTION_ONE_THIRD);
             $g = $this->hueToRgb($p, $q, $h);
-            $b = $this->hueToRgb($p, $q, $h - 1/3);
+            $b = $this->hueToRgb($p, $q, $h - self::HUE_FRACTION_ONE_THIRD);
         }
 
         return [
@@ -231,6 +231,7 @@ class BrandColorService
      * 
      * Color wheel fractions for smooth hue transitions
      */
+    private const HUE_FRACTION_ONE_THIRD = 1/3;   // 120° on color wheel
     private const HUE_FRACTION_ONE_SIXTH = 1/6;   // 60° on color wheel
     private const HUE_FRACTION_ONE_HALF = 1/2;    // 180° on color wheel  
     private const HUE_FRACTION_TWO_THIRDS = 2/3;  // 240° on color wheel
