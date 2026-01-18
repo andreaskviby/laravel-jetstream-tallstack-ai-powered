@@ -1514,6 +1514,31 @@ echo "Completed at " . date("Y-m-d H:i:s") . "\n";
             $this->features[] = "Claude Code Todo Integration";
         }
 
+        // Brand Color Palette Generator
+        echo "\n";
+        $this->ui->showSectionBox("BRAND COLOR PALETTE GENERATOR", "🎨");
+
+        $this->ui->showInfoBox("🎨 AI-POWERED BRAND COLORS", [
+            "",
+            "The create-logo command is an interactive brand color palette",
+            "generator based on neuroscience, color theory, and accessibility.",
+            "",
+            "Features:",
+            "• Interactive brand identity interview",
+            "• Scientific color generation (emotion + industry-based)",
+            "• WCAG 2.1 accessibility compliance checking",
+            "• Export to JSON, CSS, or Tailwind formats",
+            "• Professional design tool recommendations",
+            "",
+            "Usage: php artisan create-logo",
+            "",
+        ], 'brand');
+
+        if ($this->ui->confirm("Install the Brand Color Palette Generator?", true)) {
+            $this->config['create_logo'] = true;
+            $this->features[] = "Brand Color Palette Generator";
+        }
+
         // Super Admin Setup
         echo "\n";
         $this->ui->showSectionBox("SUPER ADMIN ACCOUNT", "👤");
@@ -1568,6 +1593,7 @@ echo "Completed at " . date("Y-m-d H:i:s") . "\n";
             'Configuring roles & permissions' => fn() => $this->setupRolesPermissions(),
             'Generating legal pages' => fn() => $this->generateLegalPages(),
             'Setting up todo system' => fn() => $this->setupTodoSystem(),
+            'Installing brand color generator' => fn() => $this->setupCreateLogoCommand(),
             'Installing frontend dependencies' => fn() => $this->installFrontend(),
             'Building assets' => fn() => $this->buildAssets(),
             'Final configuration' => fn() => $this->finalConfiguration(),
@@ -2571,6 +2597,33 @@ PROMPT;
                 "{$this->projectPath}/resources/views/livewire/todo-manager.blade.php"
             );
         }
+    }
+
+    private function setupCreateLogoCommand(): void
+    {
+        if (!($this->config['create_logo'] ?? false)) {
+            return;
+        }
+
+        $stubsDir = __DIR__ . '/stubs';
+
+        // Create directories
+        $commandsDir = "{$this->projectPath}/app/Console/Commands";
+        $servicesDir = "{$this->projectPath}/app/Services";
+        $this->ensureDirectoryExists($commandsDir);
+        $this->ensureDirectoryExists($servicesDir);
+
+        // Copy CreateLogoCommand
+        $this->copyStub(
+            "{$stubsDir}/CreateLogoCommand.stub",
+            "{$commandsDir}/CreateLogoCommand.php"
+        );
+
+        // Copy BrandColorService
+        $this->copyStub(
+            "{$stubsDir}/BrandColorService.stub",
+            "{$servicesDir}/BrandColorService.php"
+        );
     }
 
     private function installFrontend(): void
