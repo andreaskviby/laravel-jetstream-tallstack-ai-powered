@@ -137,9 +137,29 @@ class CreateLogoCommand extends Command
 
         $traitSelection = $this->ask('Your selection (e.g., 1,3,5)', '1,3,8');
         $selectedTraits = array_map('trim', explode(',', $traitSelection));
-        $traits = array_filter(array_map(function($num) use ($traitOptions) {
-            return $traitOptions[(int)$num] ?? null;
-        }, $selectedTraits));
+        
+        // Validate selections
+        $validSelections = [];
+        $invalidSelections = [];
+        foreach ($selectedTraits as $num) {
+            $numInt = (int)$num;
+            if ($numInt >= 1 && $numInt <= 10 && isset($traitOptions[$numInt])) {
+                $validSelections[] = $traitOptions[$numInt];
+            } elseif ($num !== '') {
+                $invalidSelections[] = $num;
+            }
+        }
+        
+        if (!empty($invalidSelections)) {
+            $this->warn('Invalid selections ignored: ' . implode(', ', $invalidSelections));
+        }
+        
+        if (empty($validSelections)) {
+            $this->warn('No valid traits selected. Using defaults.');
+            $validSelections = [$traitOptions[1], $traitOptions[3], $traitOptions[8]];
+        }
+        
+        $traits = $validSelections;
 
         // Target emotion
         $this->newLine();
@@ -298,7 +318,9 @@ class CreateLogoCommand extends Command
             $this->newLine();
         }
 
-        if ($report[0]['passes'] ?? false) {
+        $allPassed = array_reduce($report, fn($carry, $test) => $carry && $test['passes'], true);
+        
+        if ($allPassed) {
             $this->info('✓ Your palette meets WCAG 2.1 accessibility standards!');
         } else {
             $this->warn('⚠ Some contrast ratios are below recommended levels. Consider adjusting for better accessibility.');
@@ -386,15 +408,23 @@ class CreateLogoCommand extends Command
      */
     private function exportPalette(array $palette, string $format): void
     {
-        $exported = $this->colorService->exportPalette($palette, $format);
-        
-        $filename = "brand-palette-" . date('Y-m-d-His') . ".{$format}";
-        $filepath = base_path($filename);
-        
-        file_put_contents($filepath, $exported);
-        
-        $this->newLine(2);
-        $this->info("✓ Palette exported to: {$filename}");
+        try {
+            $exported = $this->colorService->exportPalette($palette, $format);
+            
+            $filename = "brand-palette-" . date('Y-m-d-His') . ".{$format}";
+            $filepath = base_path($filename);
+            
+            if (file_put_contents($filepath, $exported) === false) {
+                throw new \RuntimeException("Failed to write file: {$filepath}");
+            }
+            
+            $this->newLine(2);
+            $this->info("✓ Palette exported to: {$filename}");
+        } catch (\Exception $e) {
+            $this->newLine(2);
+            $this->error("✗ Failed to export palette: {$e->getMessage()}");
+            $this->warn("Please check file permissions and disk space.");
+        }
     }
 
     /**

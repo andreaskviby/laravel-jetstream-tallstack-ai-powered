@@ -32,6 +32,7 @@ class BrandColorService
         'Real Estate' => ['hue' => 200, 'saturation' => 50],
         'Legal & Professional Services' => ['hue' => 220, 'saturation' => 40],
         'Entertainment & Media' => ['hue' => 340, 'saturation' => 75],
+        'Other' => ['hue' => 210, 'saturation' => 60],
     ];
 
     /**
@@ -227,14 +228,20 @@ class BrandColorService
 
     /**
      * Helper for HSL to RGB conversion
+     * 
+     * Color wheel fractions for smooth hue transitions
      */
+    private const HUE_FRACTION_ONE_SIXTH = 1/6;   // 60° on color wheel
+    private const HUE_FRACTION_ONE_HALF = 1/2;    // 180° on color wheel  
+    private const HUE_FRACTION_TWO_THIRDS = 2/3;  // 240° on color wheel
+    
     private function hueToRgb(float $p, float $q, float $t): float
     {
         if ($t < 0) $t += 1;
         if ($t > 1) $t -= 1;
-        if ($t < 1/6) return $p + ($q - $p) * 6 * $t;
-        if ($t < 1/2) return $q;
-        if ($t < 2/3) return $p + ($q - $p) * (2/3 - $t) * 6;
+        if ($t < self::HUE_FRACTION_ONE_SIXTH) return $p + ($q - $p) * 6 * $t;
+        if ($t < self::HUE_FRACTION_ONE_HALF) return $q;
+        if ($t < self::HUE_FRACTION_TWO_THIRDS) return $p + ($q - $p) * (self::HUE_FRACTION_TWO_THIRDS - $t) * 6;
         return $p;
     }
 
@@ -322,11 +329,18 @@ class BrandColorService
      */
     public function exportPalette(array $palette, string $format): string
     {
+        $validFormats = ['json', 'css', 'tailwind'];
+        
+        if (!in_array($format, $validFormats)) {
+            throw new \InvalidArgumentException(
+                "Unsupported export format: {$format}. Valid formats: " . implode(', ', $validFormats)
+            );
+        }
+        
         return match($format) {
             'json' => $this->exportToJson($palette),
             'css' => $this->exportToCss($palette),
             'tailwind' => $this->exportToTailwind($palette),
-            default => $this->exportToJson($palette),
         };
     }
 
