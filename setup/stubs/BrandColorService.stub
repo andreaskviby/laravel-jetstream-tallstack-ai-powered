@@ -1,0 +1,408 @@
+<?php
+
+namespace App\Services;
+
+class BrandColorService
+{
+    /**
+     * Color psychology mappings
+     */
+    private array $colorPsychology = [
+        'Trust & Security' => ['hue' => 210, 'name' => 'blue'],
+        'Excitement & Energy' => ['hue' => 0, 'name' => 'red'],
+        'Calm & Relaxation' => ['hue' => 180, 'name' => 'cyan'],
+        'Innovation & Progress' => ['hue' => 270, 'name' => 'purple'],
+        'Warmth & Comfort' => ['hue' => 30, 'name' => 'orange'],
+        'Power & Confidence' => ['hue' => 0, 'name' => 'black', 'saturation' => 0],
+        'Joy & Optimism' => ['hue' => 50, 'name' => 'yellow'],
+        'Sophistication & Elegance' => ['hue' => 280, 'name' => 'deep-purple'],
+    ];
+
+    /**
+     * Industry color preferences
+     */
+    private array $industryColors = [
+        'Technology & Software' => ['hue' => 210, 'saturation' => 70],
+        'Finance & Banking' => ['hue' => 220, 'saturation' => 60],
+        'Healthcare & Wellness' => ['hue' => 140, 'saturation' => 50],
+        'E-commerce & Retail' => ['hue' => 10, 'saturation' => 75],
+        'Education & Training' => ['hue' => 200, 'saturation' => 65],
+        'Creative & Design' => ['hue' => 280, 'saturation' => 80],
+        'Food & Beverage' => ['hue' => 25, 'saturation' => 70],
+        'Real Estate' => ['hue' => 200, 'saturation' => 50],
+        'Legal & Professional Services' => ['hue' => 220, 'saturation' => 40],
+        'Entertainment & Media' => ['hue' => 340, 'saturation' => 75],
+    ];
+
+    /**
+     * Generate a complete brand color palette
+     */
+    public function generatePalette(array $brandData): array
+    {
+        // Determine primary color based on emotion and industry
+        $primaryColor = $this->determinePrimaryColor($brandData);
+        
+        // Generate secondary colors using color harmony
+        $secondaryColors = $this->generateSecondaryColors($primaryColor, $brandData);
+        
+        // Generate accent color
+        $accentColor = $this->generateAccentColor($primaryColor);
+        
+        // Generate neutral colors
+        $neutralColors = $this->generateNeutralColors($brandData);
+
+        return [
+            'primary' => $primaryColor,
+            'secondary' => $secondaryColors,
+            'accent' => $accentColor,
+            'neutrals' => $neutralColors,
+            'brand_data' => $brandData,
+        ];
+    }
+
+    /**
+     * Determine primary color based on brand data
+     */
+    private function determinePrimaryColor(array $brandData): array
+    {
+        // Get base hue from emotion
+        $emotionData = $this->colorPsychology[$brandData['emotion']] ?? ['hue' => 210, 'name' => 'blue'];
+        
+        // Adjust based on industry
+        $industryData = $this->industryColors[$brandData['industry']] ?? ['hue' => 210, 'saturation' => 60];
+        
+        // Blend emotion and industry preferences
+        $hue = (int) (($emotionData['hue'] + $industryData['hue']) / 2);
+        $saturation = $industryData['saturation'];
+        
+        // Adjust based on traits
+        $lightness = $this->calculateLightnessFromTraits($brandData['traits']);
+        
+        return $this->createColorData($hue, $saturation, $lightness);
+    }
+
+    /**
+     * Calculate lightness value based on brand traits
+     */
+    private function calculateLightnessFromTraits(array $traits): int
+    {
+        $lightnessMap = [
+            'Calm & Peaceful' => 65,
+            'Bold & Energetic' => 50,
+            'Modern & Innovative' => 55,
+            'Friendly & Approachable' => 60,
+            'Serious & Professional' => 45,
+            'Luxurious & Premium' => 40,
+            'Playful & Fun' => 65,
+            'Trustworthy & Reliable' => 50,
+            'Natural & Organic' => 55,
+            'Minimal & Clean' => 70,
+        ];
+
+        $total = 0;
+        $count = 0;
+
+        foreach ($traits as $trait) {
+            if (isset($lightnessMap[$trait])) {
+                $total += $lightnessMap[$trait];
+                $count++;
+            }
+        }
+
+        return $count > 0 ? (int) ($total / $count) : 55;
+    }
+
+    /**
+     * Generate secondary colors using analogous harmony
+     */
+    private function generateSecondaryColors(array $primary, array $brandData): array
+    {
+        $hsl = $primary['hsl'];
+        
+        // Analogous colors: +/- 30 degrees on color wheel
+        $secondary1 = $this->createColorData(
+            ($hsl['h'] + 30) % 360,
+            max(20, $hsl['s'] - 20),
+            min(90, $hsl['l'] + 15)
+        );
+        
+        $secondary2 = $this->createColorData(
+            ($hsl['h'] - 30 + 360) % 360,
+            max(20, $hsl['s'] - 20),
+            min(90, $hsl['l'] + 15)
+        );
+
+        return [$secondary1, $secondary2];
+    }
+
+    /**
+     * Generate accent color using complementary harmony
+     */
+    private function generateAccentColor(array $primary): array
+    {
+        $hsl = $primary['hsl'];
+        
+        // Complementary color: opposite on color wheel (180 degrees)
+        return $this->createColorData(
+            ($hsl['h'] + 180) % 360,
+            min(100, $hsl['s'] + 10),
+            max(30, $hsl['l'] - 10)
+        );
+    }
+
+    /**
+     * Generate neutral colors
+     */
+    private function generateNeutralColors(array $brandData): array
+    {
+        return [
+            'White' => [
+                'hex' => '#FFFFFF',
+                'rgb' => ['r' => 255, 'g' => 255, 'b' => 255],
+                'hsl' => ['h' => 0, 's' => 0, 'l' => 100],
+            ],
+            'Light Gray' => [
+                'hex' => '#F5F5F5',
+                'rgb' => ['r' => 245, 'g' => 245, 'b' => 245],
+                'hsl' => ['h' => 0, 's' => 0, 'l' => 96],
+            ],
+            'Medium Gray' => [
+                'hex' => '#9CA3AF',
+                'rgb' => ['r' => 156, 'g' => 163, 'b' => 175],
+                'hsl' => ['h' => 218, 's' => 11, 'l' => 65],
+            ],
+            'Dark Gray' => [
+                'hex' => '#374151',
+                'rgb' => ['r' => 55, 'g' => 65, 'b' => 81],
+                'hsl' => ['h' => 217, 's' => 19, 'l' => 27],
+            ],
+            'Black' => [
+                'hex' => '#111827',
+                'rgb' => ['r' => 17, 'g' => 24, 'b' => 39],
+                'hsl' => ['h' => 221, 's' => 39, 'l' => 11],
+            ],
+        ];
+    }
+
+    /**
+     * Create color data structure from HSL
+     */
+    private function createColorData(int $h, int $s, int $l): array
+    {
+        $rgb = $this->hslToRgb($h, $s, $l);
+        $hex = $this->rgbToHex($rgb['r'], $rgb['g'], $rgb['b']);
+
+        return [
+            'hex' => $hex,
+            'rgb' => $rgb,
+            'hsl' => ['h' => $h, 's' => $s, 'l' => $l],
+        ];
+    }
+
+    /**
+     * Convert HSL to RGB
+     */
+    private function hslToRgb(int $h, int $s, int $l): array
+    {
+        $h = $h / 360;
+        $s = $s / 100;
+        $l = $l / 100;
+
+        if ($s == 0) {
+            $r = $g = $b = $l;
+        } else {
+            $q = $l < 0.5 ? $l * (1 + $s) : $l + $s - $l * $s;
+            $p = 2 * $l - $q;
+            $r = $this->hueToRgb($p, $q, $h + 1/3);
+            $g = $this->hueToRgb($p, $q, $h);
+            $b = $this->hueToRgb($p, $q, $h - 1/3);
+        }
+
+        return [
+            'r' => (int) round($r * 255),
+            'g' => (int) round($g * 255),
+            'b' => (int) round($b * 255),
+        ];
+    }
+
+    /**
+     * Helper for HSL to RGB conversion
+     */
+    private function hueToRgb(float $p, float $q, float $t): float
+    {
+        if ($t < 0) $t += 1;
+        if ($t > 1) $t -= 1;
+        if ($t < 1/6) return $p + ($q - $p) * 6 * $t;
+        if ($t < 1/2) return $q;
+        if ($t < 2/3) return $p + ($q - $p) * (2/3 - $t) * 6;
+        return $p;
+    }
+
+    /**
+     * Convert RGB to HEX
+     */
+    private function rgbToHex(int $r, int $g, int $b): string
+    {
+        return sprintf("#%02X%02X%02X", $r, $g, $b);
+    }
+
+    /**
+     * Calculate relative luminance for WCAG contrast calculations
+     */
+    private function getLuminance(array $rgb): float
+    {
+        $r = $rgb['r'] / 255;
+        $g = $rgb['g'] / 255;
+        $b = $rgb['b'] / 255;
+
+        $r = $r <= 0.03928 ? $r / 12.92 : pow(($r + 0.055) / 1.055, 2.4);
+        $g = $g <= 0.03928 ? $g / 12.92 : pow(($g + 0.055) / 1.055, 2.4);
+        $b = $b <= 0.03928 ? $b / 12.92 : pow(($b + 0.055) / 1.055, 2.4);
+
+        return 0.2126 * $r + 0.7152 * $g + 0.0722 * $b;
+    }
+
+    /**
+     * Calculate contrast ratio between two colors
+     */
+    private function getContrastRatio(array $color1, array $color2): float
+    {
+        $l1 = $this->getLuminance($color1['rgb']);
+        $l2 = $this->getLuminance($color2['rgb']);
+
+        $lighter = max($l1, $l2);
+        $darker = min($l1, $l2);
+
+        return ($lighter + 0.05) / ($darker + 0.05);
+    }
+
+    /**
+     * Generate accessibility report
+     */
+    public function generateAccessibilityReport(array $palette): array
+    {
+        $white = $palette['neutrals']['White'];
+        $black = $palette['neutrals']['Black'];
+        $primary = $palette['primary'];
+
+        $report = [];
+
+        // Test primary on white background
+        $primaryOnWhite = $this->getContrastRatio($primary, $white);
+        $report[] = [
+            'description' => 'Primary color on white background',
+            'ratio' => number_format($primaryOnWhite, 2) . ':1',
+            'required' => '4.5:1',
+            'passes' => $primaryOnWhite >= 4.5,
+        ];
+
+        // Test primary on black background
+        $primaryOnBlack = $this->getContrastRatio($primary, $black);
+        $report[] = [
+            'description' => 'Primary color on black background',
+            'ratio' => number_format($primaryOnBlack, 2) . ':1',
+            'required' => '4.5:1',
+            'passes' => $primaryOnBlack >= 4.5,
+        ];
+
+        // Test black on white (standard text)
+        $textContrast = $this->getContrastRatio($black, $white);
+        $report[] = [
+            'description' => 'Body text (dark on light)',
+            'ratio' => number_format($textContrast, 2) . ':1',
+            'required' => '4.5:1',
+            'passes' => $textContrast >= 4.5,
+        ];
+
+        return $report;
+    }
+
+    /**
+     * Export palette to various formats
+     */
+    public function exportPalette(array $palette, string $format): string
+    {
+        return match($format) {
+            'json' => $this->exportToJson($palette),
+            'css' => $this->exportToCss($palette),
+            'tailwind' => $this->exportToTailwind($palette),
+            default => $this->exportToJson($palette),
+        };
+    }
+
+    /**
+     * Export to JSON format
+     */
+    private function exportToJson(array $palette): string
+    {
+        return json_encode([
+            'primary' => $palette['primary'],
+            'secondary' => $palette['secondary'],
+            'accent' => $palette['accent'],
+            'neutrals' => $palette['neutrals'],
+        ], JSON_PRETTY_PRINT);
+    }
+
+    /**
+     * Export to CSS custom properties
+     */
+    private function exportToCss(array $palette): string
+    {
+        $css = ":root {\n";
+        $css .= "  /* Primary Color */\n";
+        $css .= "  --color-primary: {$palette['primary']['hex']};\n";
+        $css .= "  --color-primary-rgb: {$palette['primary']['rgb']['r']}, {$palette['primary']['rgb']['g']}, {$palette['primary']['rgb']['b']};\n\n";
+
+        $css .= "  /* Secondary Colors */\n";
+        foreach ($palette['secondary'] as $i => $color) {
+            $num = $i + 1;
+            $css .= "  --color-secondary-{$num}: {$color['hex']};\n";
+        }
+        $css .= "\n";
+
+        $css .= "  /* Accent Color */\n";
+        $css .= "  --color-accent: {$palette['accent']['hex']};\n\n";
+
+        $css .= "  /* Neutral Colors */\n";
+        foreach ($palette['neutrals'] as $name => $color) {
+            $varName = strtolower(str_replace(' ', '-', $name));
+            $css .= "  --color-{$varName}: {$color['hex']};\n";
+        }
+
+        $css .= "}\n";
+
+        return $css;
+    }
+
+    /**
+     * Export to Tailwind configuration
+     */
+    private function exportToTailwind(array $palette): string
+    {
+        $config = "// Add to your tailwind.config.js\n";
+        $config .= "module.exports = {\n";
+        $config .= "  theme: {\n";
+        $config .= "    extend: {\n";
+        $config .= "      colors: {\n";
+        $config .= "        primary: '{$palette['primary']['hex']}',\n";
+        
+        foreach ($palette['secondary'] as $i => $color) {
+            $num = $i + 1;
+            $config .= "        'secondary-{$num}': '{$color['hex']}',\n";
+        }
+        
+        $config .= "        accent: '{$palette['accent']['hex']}',\n";
+        
+        foreach ($palette['neutrals'] as $name => $color) {
+            $varName = strtolower(str_replace(' ', '-', $name));
+            $config .= "        '{$varName}': '{$color['hex']}',\n";
+        }
+        
+        $config .= "      },\n";
+        $config .= "    },\n";
+        $config .= "  },\n";
+        $config .= "}\n";
+
+        return $config;
+    }
+}

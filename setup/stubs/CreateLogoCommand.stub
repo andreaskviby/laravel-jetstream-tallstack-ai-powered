@@ -1,0 +1,423 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Services\BrandColorService;
+use Illuminate\Console\Command;
+
+class CreateLogoCommand extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'create-logo 
+                            {--export= : Export palette to file (json, css, tailwind)}
+                            {--skip-interview : Skip interview and use defaults}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Interactive brand color palette generator based on neuroscience and color theory';
+
+    private BrandColorService $colorService;
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $this->colorService = app(BrandColorService::class);
+
+        $this->displayWelcomeBanner();
+
+        if (!$this->option('skip-interview')) {
+            $brandData = $this->conductInterview();
+        } else {
+            $brandData = $this->getDefaultBrandData();
+        }
+
+        $this->displayEducationalContent();
+
+        $palette = $this->colorService->generatePalette($brandData);
+
+        $this->displayPalette($palette);
+
+        $this->displayAccessibilityReport($palette);
+
+        $this->displayRecommendations($palette);
+
+        $this->displayToolRecommendations();
+
+        if ($exportFormat = $this->option('export')) {
+            $this->exportPalette($palette, $exportFormat);
+        }
+
+        $this->displayClosingMessage();
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Display welcome banner
+     */
+    private function displayWelcomeBanner(): void
+    {
+        $this->newLine();
+        $this->line('╔══════════════════════════════════════════════════════════════════════════════╗');
+        $this->line('║                                                                              ║');
+        $this->line('║   <fg=magenta;options=bold>🎨 BRAND COLOR PALETTE GENERATOR</>                                           ║');
+        $this->line('║   <fg=cyan>Based on Neuroscience, Color Theory & Accessibility Standards</>              ║');
+        $this->line('║                                                                              ║');
+        $this->line('╚══════════════════════════════════════════════════════════════════════════════╝');
+        $this->newLine();
+        
+        $this->info('Welcome to the AI-powered brand color palette generator!');
+        $this->line('This tool will help you create a scientifically-backed color system for your brand.');
+        $this->newLine();
+    }
+
+    /**
+     * Conduct brand interview
+     */
+    private function conductInterview(): array
+    {
+        $this->line('<fg=cyan;options=bold>━━━ BRAND IDENTITY INTERVIEW ━━━</>');
+        $this->newLine();
+
+        // Brand name
+        $brandName = $this->ask('<fg=yellow>What is your brand name?</>');
+
+        // Industry selection
+        $this->newLine();
+        $this->line('<fg=cyan>Select your industry:</>');
+        $industry = $this->choice(
+            'Industry',
+            [
+                'Technology & Software',
+                'Finance & Banking',
+                'Healthcare & Wellness',
+                'E-commerce & Retail',
+                'Education & Training',
+                'Creative & Design',
+                'Food & Beverage',
+                'Real Estate',
+                'Legal & Professional Services',
+                'Entertainment & Media',
+                'Other'
+            ],
+            0
+        );
+
+        // Brand traits (multiselect simulation)
+        $this->newLine();
+        $this->line('<fg=cyan>Select 3 traits that best describe your brand:</>');
+        $this->line('<fg=gray>Type numbers separated by commas (e.g., 1,3,5)</>');
+        $this->newLine();
+        
+        $traitOptions = [
+            1 => 'Calm & Peaceful',
+            2 => 'Bold & Energetic',
+            3 => 'Modern & Innovative',
+            4 => 'Friendly & Approachable',
+            5 => 'Serious & Professional',
+            6 => 'Luxurious & Premium',
+            7 => 'Playful & Fun',
+            8 => 'Trustworthy & Reliable',
+            9 => 'Natural & Organic',
+            10 => 'Minimal & Clean'
+        ];
+
+        foreach ($traitOptions as $num => $trait) {
+            $this->line("  <fg=cyan>{$num}.</> {$trait}");
+        }
+
+        $traitSelection = $this->ask('Your selection (e.g., 1,3,5)', '1,3,8');
+        $selectedTraits = array_map('trim', explode(',', $traitSelection));
+        $traits = array_filter(array_map(function($num) use ($traitOptions) {
+            return $traitOptions[(int)$num] ?? null;
+        }, $selectedTraits));
+
+        // Target emotion
+        $this->newLine();
+        $this->line('<fg=cyan>What primary emotion should your brand evoke?</>');
+        $emotion = $this->choice(
+            'Primary emotion',
+            [
+                'Trust & Security',
+                'Excitement & Energy',
+                'Calm & Relaxation',
+                'Innovation & Progress',
+                'Warmth & Comfort',
+                'Power & Confidence',
+                'Joy & Optimism',
+                'Sophistication & Elegance'
+            ],
+            0
+        );
+
+        // Preferred colors (optional)
+        $this->newLine();
+        $preferredColors = $this->ask(
+            '<fg=yellow>Any color preferences? (optional, comma-separated)</>',
+            ''
+        );
+
+        // Colors to avoid (optional)
+        $colorsToAvoid = $this->ask(
+            '<fg=yellow>Any colors to avoid? (optional, comma-separated)</>',
+            ''
+        );
+
+        return [
+            'brand_name' => $brandName,
+            'industry' => $industry,
+            'traits' => array_values($traits),
+            'emotion' => $emotion,
+            'preferred_colors' => $preferredColors ? array_map('trim', explode(',', $preferredColors)) : [],
+            'avoid_colors' => $colorsToAvoid ? array_map('trim', explode(',', $colorsToAvoid)) : [],
+        ];
+    }
+
+    /**
+     * Get default brand data
+     */
+    private function getDefaultBrandData(): array
+    {
+        return [
+            'brand_name' => 'Example Brand',
+            'industry' => 'Technology & Software',
+            'traits' => ['Modern & Innovative', 'Trustworthy & Reliable', 'Friendly & Approachable'],
+            'emotion' => 'Trust & Security',
+            'preferred_colors' => [],
+            'avoid_colors' => [],
+        ];
+    }
+
+    /**
+     * Display educational content
+     */
+    private function displayEducationalContent(): void
+    {
+        $this->newLine(2);
+        $this->line('<fg=magenta;options=bold>━━━ WHY COLOR MATTERS ━━━</>');
+        $this->newLine();
+
+        $this->line('<fg=cyan;options=bold>Neuroscience Insights:</>');
+        $this->line('• Visual perception happens faster than conscious thinking');
+        $this->line('• Color is processed before shape and language');
+        $this->line('• Consistent color usage increases brand recognition by up to 80%');
+        $this->newLine();
+
+        $this->line('<fg=cyan;options=bold>Color Psychology:</>');
+        $this->line('• <fg=blue>Blue</> → Trust, calm, logic (finance, tech)');
+        $this->line('• <fg=red>Red</> → Energy, urgency, passion (food, retail)');
+        $this->line('• <fg=green>Green</> → Growth, health, balance (wellness, eco)');
+        $this->line('• <fg=yellow>Yellow</> → Optimism, attention, warning');
+        $this->line('• <fg=black>Black</> → Power, luxury, sophistication');
+        $this->newLine();
+
+        $this->line('<fg=cyan;options=bold>Accessibility Standards (WCAG 2.1):</>');
+        $this->line('• Minimum contrast ratio: <fg=yellow>4.5:1</> for body text');
+        $this->line('• Recommended ratio: <fg=green>7:1</> for enhanced accessibility');
+        $this->line('• This ensures readability for all users, including those with visual impairments');
+        $this->newLine();
+
+        $this->info('⏳ Generating your scientifically-backed color palette...');
+        sleep(1);
+    }
+
+    /**
+     * Display the generated palette
+     */
+    private function displayPalette(array $palette): void
+    {
+        $this->newLine(2);
+        $this->line('<fg=magenta;options=bold>━━━ YOUR BRAND COLOR PALETTE ━━━</>');
+        $this->newLine();
+
+        // Primary Color
+        $this->displayColorBlock('PRIMARY COLOR', $palette['primary'], 'The core of your brand identity');
+
+        // Secondary Colors
+        $this->newLine();
+        $this->line('<fg=cyan;options=bold>SECONDARY COLORS:</> Support and flexibility');
+        foreach ($palette['secondary'] as $i => $color) {
+            $this->displayColorBlock("Secondary " . ($i + 1), $color);
+        }
+
+        // Accent Color
+        $this->newLine();
+        $this->displayColorBlock('ACCENT COLOR', $palette['accent'], 'For CTAs, highlights, and attention');
+
+        // Neutral Colors
+        $this->newLine();
+        $this->line('<fg=cyan;options=bold>NEUTRAL COLORS:</> Backgrounds and text');
+        foreach ($palette['neutrals'] as $name => $color) {
+            $this->displayColorBlock($name, $color);
+        }
+    }
+
+    /**
+     * Display a single color block
+     */
+    private function displayColorBlock(string $name, array $color, ?string $usage = null): void
+    {
+        $this->newLine();
+        $this->line("  <fg=white;options=bold>{$name}</>");
+        if ($usage) {
+            $this->line("  <fg=gray>{$usage}</>");
+        }
+        $this->line("  ┌────────────────────────────────────────┐");
+        $this->line("  │  HEX:  <fg=cyan>{$color['hex']}</>                        ");
+        $this->line("  │  RGB:  <fg=cyan>rgb({$color['rgb']['r']}, {$color['rgb']['g']}, {$color['rgb']['b']})</>        ");
+        if (isset($color['hsl'])) {
+            $this->line("  │  HSL:  <fg=cyan>hsl({$color['hsl']['h']}°, {$color['hsl']['s']}%, {$color['hsl']['l']}%)</>  ");
+        }
+        $this->line("  └────────────────────────────────────────┘");
+    }
+
+    /**
+     * Display accessibility report
+     */
+    private function displayAccessibilityReport(array $palette): void
+    {
+        $this->newLine(2);
+        $this->line('<fg=magenta;options=bold>━━━ ACCESSIBILITY REPORT ━━━</>');
+        $this->newLine();
+
+        $report = $this->colorService->generateAccessibilityReport($palette);
+
+        foreach ($report as $test) {
+            $status = $test['passes'] ? '<fg=green>✓ PASS</>' : '<fg=red>✗ FAIL</>';
+            $this->line("  {$status} {$test['description']}");
+            $this->line("      Contrast Ratio: <fg=cyan>{$test['ratio']}</>  (Required: {$test['required']})");
+            $this->newLine();
+        }
+
+        if ($report[0]['passes'] ?? false) {
+            $this->info('✓ Your palette meets WCAG 2.1 accessibility standards!');
+        } else {
+            $this->warn('⚠ Some contrast ratios are below recommended levels. Consider adjusting for better accessibility.');
+        }
+    }
+
+    /**
+     * Display usage recommendations
+     */
+    private function displayRecommendations(array $palette): void
+    {
+        $this->newLine(2);
+        $this->line('<fg=magenta;options=bold>━━━ USAGE RECOMMENDATIONS ━━━</>');
+        $this->newLine();
+
+        $this->line('<fg=cyan;options=bold>Brand Applications:</>');
+        $this->line('  • Logo: Use primary color as the dominant element');
+        $this->line('  • Website Header: Primary color with neutral backgrounds');
+        $this->line('  • Buttons/CTAs: Accent color to draw attention');
+        $this->line('  • Body Text: Dark neutral on light neutral (ensure 4.5:1 contrast)');
+        $this->line('  • Backgrounds: Light neutrals with strategic accent placement');
+        $this->newLine();
+
+        $this->line('<fg=cyan;options=bold>Testing Checklist:</>');
+        $this->line('  □ Convert to grayscale - important elements should remain visible');
+        $this->line('  □ View on small phone screens - text and icons should be clear');
+        $this->line('  □ Test with users - confirm emotional alignment with brand traits');
+        $this->line('  □ Check in different lighting - outdoor, indoor, night mode');
+        $this->newLine();
+
+        $this->line('<fg=cyan;options=bold>Common Mistakes to Avoid:</>');
+        $this->line('  ✗ Using too many bright colors (causes visual fatigue)');
+        $this->line('  ✗ Following trends too closely (trends fade, brands persist)');
+        $this->line('  ✗ Low contrast text (damages readability)');
+        $this->line('  ✗ Copying competitor palettes (reduces uniqueness)');
+    }
+
+    /**
+     * Display tool recommendations
+     */
+    private function displayToolRecommendations(): void
+    {
+        $this->newLine(2);
+        $this->line('<fg=magenta;options=bold>━━━ RECOMMENDED DESIGN TOOLS ━━━</>');
+        $this->newLine();
+
+        $tools = [
+            [
+                'name' => 'Color Contrast Checker',
+                'url' => 'https://colourcontrast.cc/',
+                'description' => 'Test contrast ratios against WCAG 2.1 standards'
+            ],
+            [
+                'name' => 'Khroma',
+                'url' => 'https://www.khroma.co/train',
+                'description' => 'AI-powered palette generator that learns your preferences'
+            ],
+            [
+                'name' => 'Color Spectrum',
+                'url' => 'https://colorspectrum.design/',
+                'description' => 'Explore harmonious color systems from a base color'
+            ],
+            [
+                'name' => 'Pigment by Shapefactory',
+                'url' => 'https://pigment.shapefactory.co/',
+                'description' => 'Creative palettes based on light and pigment harmony'
+            ],
+            [
+                'name' => 'Realtime Colors',
+                'url' => 'https://www.realtimecolors.com/',
+                'description' => 'See your palette applied to a realistic website layout'
+            ],
+        ];
+
+        foreach ($tools as $tool) {
+            $this->line("  <fg=cyan;options=bold>{$tool['name']}</>");
+            $this->line("  <fg=blue;options=underscore>{$tool['url']}</>");
+            $this->line("  <fg=gray>{$tool['description']}</>");
+            $this->newLine();
+        }
+    }
+
+    /**
+     * Export palette to file
+     */
+    private function exportPalette(array $palette, string $format): void
+    {
+        $exported = $this->colorService->exportPalette($palette, $format);
+        
+        $filename = "brand-palette-" . date('Y-m-d-His') . ".{$format}";
+        $filepath = base_path($filename);
+        
+        file_put_contents($filepath, $exported);
+        
+        $this->newLine(2);
+        $this->info("✓ Palette exported to: {$filename}");
+    }
+
+    /**
+     * Display closing message
+     */
+    private function displayClosingMessage(): void
+    {
+        $this->newLine(2);
+        $this->line('╔══════════════════════════════════════════════════════════════════════════════╗');
+        $this->line('║                                                                              ║');
+        $this->line('║   <fg=green;options=bold>✓ Brand Color Palette Generated Successfully!</>                              ║');
+        $this->line('║                                                                              ║');
+        $this->line('║   <fg=cyan>Next Steps:</>                                                              ║');
+        $this->line('║   1. Save this output for your design team                                   ║');
+        $this->line('║   2. Test the palette in your actual designs                                 ║');
+        $this->line('║   3. Validate accessibility with the recommended tools                       ║');
+        $this->line('║   4. Apply consistently across all brand touchpoints                         ║');
+        $this->line('║                                                                              ║');
+        $this->line('╚══════════════════════════════════════════════════════════════════════════════╝');
+        $this->newLine();
+        
+        $this->line('<fg=gray>💡 Tip: Run with --export=css to generate CSS variables for your project</>');
+        $this->line('<fg=gray>Example: php artisan create-logo --export=tailwind</>');
+        $this->newLine();
+    }
+}

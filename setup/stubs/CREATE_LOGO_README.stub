@@ -1,0 +1,261 @@
+# Create Logo Command - Installation Guide
+
+## Overview
+The `create-logo` command is an interactive brand color palette generator based on neuroscience, color theory, and accessibility standards (WCAG 2.1).
+
+## Files to Install
+
+### 1. Command File
+**Source:** `setup/stubs/CreateLogoCommand.stub`  
+**Destination:** `app/Console/Commands/CreateLogoCommand.php`
+
+### 2. Service File
+**Source:** `setup/stubs/BrandColorService.stub`  
+**Destination:** `app/Services/BrandColorService.php`
+
+## Installation Steps
+
+### Option 1: Manual Installation
+
+```bash
+# Create directories
+mkdir -p app/Console/Commands
+mkdir -p app/Services
+
+# Copy command
+cp setup/stubs/CreateLogoCommand.stub app/Console/Commands/CreateLogoCommand.php
+
+# Copy service
+cp setup/stubs/BrandColorService.stub app/Services/BrandColorService.php
+
+# Clear cache
+php artisan cache:clear
+php artisan config:clear
+```
+
+### Option 2: Add to UltimateInstaller.php
+
+Add a new phase to the installer or integrate into an existing phase:
+
+```php
+/**
+ * Install Create Logo Command (Phase X or sub-phase)
+ */
+private function installCreateLogoCommand(): void
+{
+    $this->ui->showPhaseHeader(X, self::TOTAL_PHASES, 'Brand Color Palette Generator', '🎨');
+    
+    if (!$this->ui->confirm('Install the create-logo command for brand color palette generation?', true)) {
+        $this->ui->warning('Skipped create-logo command installation');
+        return;
+    }
+
+    // Create directories
+    $this->ensureDirectoryExists($this->projectPath . '/app/Console/Commands');
+    $this->ensureDirectoryExists($this->projectPath . '/app/Services');
+
+    // Install command
+    $this->copyStubToProject(
+        'CreateLogoCommand.stub',
+        'app/Console/Commands/CreateLogoCommand.php'
+    );
+
+    // Install service
+    $this->copyStubToProject(
+        'BrandColorService.stub',
+        'app/Services/BrandColorService.php'
+    );
+
+    $this->ui->success('Brand color palette generator installed!');
+    $this->ui->info('Try it: php artisan create-logo');
+}
+```
+
+## Usage
+
+### Basic Usage
+```bash
+php artisan create-logo
+```
+
+This will:
+1. Ask questions about your brand (name, industry, traits, emotions)
+2. Display educational content about color psychology and neuroscience
+3. Generate a scientifically-backed color palette
+4. Show accessibility report (WCAG 2.1 compliance)
+5. Provide usage recommendations
+6. Display links to recommended design tools
+
+### Skip Interview Mode
+```bash
+php artisan create-logo --skip-interview
+```
+
+Uses default values for quick testing.
+
+### Export to File
+```bash
+# Export to JSON
+php artisan create-logo --export=json
+
+# Export to CSS custom properties
+php artisan create-logo --export=css
+
+# Export to Tailwind config
+php artisan create-logo --export=tailwind
+```
+
+## Features
+
+### 1. Interactive Brand Interview
+- Brand name
+- Industry selection (11 options)
+- Brand traits selection (10 traits to choose from)
+- Primary emotion
+- Preferred colors (optional)
+- Colors to avoid (optional)
+
+### 2. Educational Content
+- **Neuroscience Insights:** Visual perception, cognitive processing
+- **Color Psychology:** Emotional associations of different colors
+- **Accessibility Standards:** WCAG 2.1 contrast ratios
+
+### 3. Scientific Color Generation
+- **Primary Color:** Based on emotion + industry best practices
+- **Secondary Colors:** Generated using analogous harmony
+- **Accent Color:** Complementary color for CTAs
+- **Neutral Colors:** Professional grayscale palette
+
+### 4. Accessibility Report
+Tests against WCAG 2.1 standards:
+- Primary on white background (4.5:1 minimum)
+- Primary on black background (4.5:1 minimum)
+- Body text contrast (4.5:1 minimum)
+
+### 5. Usage Recommendations
+- Brand application guidelines
+- Testing checklist
+- Common mistakes to avoid
+
+### 6. Design Tool Recommendations
+Links to 5 professional tools:
+- Color Contrast Checker (https://colourcontrast.cc/)
+- Khroma (https://www.khroma.co/train)
+- Color Spectrum (https://colorspectrum.design/)
+- Pigment by Shapefactory (https://pigment.shapefactory.co/)
+- Realtime Colors (https://www.realtimecolors.com/)
+
+### 7. Export Formats
+- **JSON:** Complete palette data
+- **CSS:** CSS custom properties (--color-primary, etc.)
+- **Tailwind:** Ready to paste into tailwind.config.js
+
+## Color Science
+
+### Color Harmony Rules
+- **Analogous:** ±30° on color wheel (smooth, natural)
+- **Complementary:** 180° on color wheel (dynamic contrast)
+- **Saturation Control:** Prevents visual overload
+
+### Accessibility Standards
+- WCAG 2.1 Level AA: 4.5:1 for normal text
+- WCAG 2.1 Level AAA: 7:1 for enhanced accessibility
+- Relative luminance calculations per W3C spec
+
+### Industry Best Practices
+- Tech/Finance: Blue (trust, stability)
+- Healthcare: Green (health, growth)
+- Food: Warm colors (appetite, energy)
+- Luxury: Dark, low saturation (sophistication)
+- Creative: Purple (innovation, creativity)
+
+## Dependencies
+
+None! The command uses:
+- Built-in Laravel Console components
+- No external packages required
+- Pure PHP color calculations
+
+## Testing
+
+```bash
+# Test with different industries
+php artisan create-logo --skip-interview
+
+# Test export formats
+php artisan create-logo --skip-interview --export=json
+php artisan create-logo --skip-interview --export=css
+php artisan create-logo --skip-interview --export=tailwind
+
+# Test full interview
+php artisan create-logo
+```
+
+## Output Example
+
+The command generates:
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║   🎨 BRAND COLOR PALETTE GENERATOR                          ║
+║   Based on Neuroscience, Color Theory & Accessibility       ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+━━━ YOUR BRAND COLOR PALETTE ━━━
+
+PRIMARY COLOR
+The core of your brand identity
+┌────────────────────────────────────────┐
+│  HEX:  #3B82F6                         │
+│  RGB:  rgb(59, 130, 246)               │
+│  HSL:  hsl(217°, 91%, 60%)             │
+└────────────────────────────────────────┘
+
+[... secondary, accent, and neutral colors ...]
+
+━━━ ACCESSIBILITY REPORT ━━━
+
+✓ PASS Primary color on white background
+    Contrast Ratio: 4.72  (Required: 4.5:1)
+
+[... additional accessibility tests ...]
+
+━━━ RECOMMENDED DESIGN TOOLS ━━━
+
+Color Contrast Checker
+https://colourcontrast.cc/
+Test contrast ratios against WCAG 2.1 standards
+
+[... more tool recommendations ...]
+```
+
+## Integration with Installer
+
+You can add this as:
+1. **Optional Feature** in Phase 8 (Optional Features)
+2. **New Phase** dedicated to branding tools
+3. **Post-Install Hook** that offers the command after setup
+
+Recommended approach: Add to Phase 8 as an optional feature alongside other branding tools.
+
+## Future Enhancements
+
+Potential additions:
+- [ ] Save palettes to database
+- [ ] Generate logo mockups
+- [ ] Team branding integration
+- [ ] AI-powered logo suggestions
+- [ ] Export to Figma/Sketch
+- [ ] Color blindness simulation
+- [ ] Dark mode palette generation
+- [ ] Animation color timing suggestions
+
+## Credits
+
+Based on research from:
+- W3C WCAG 2.1 Guidelines
+- Color theory and harmony principles
+- Neuroscience studies on visual perception
+- Marketing psychology research
+- Accessibility best practices
