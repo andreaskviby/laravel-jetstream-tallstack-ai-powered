@@ -144,6 +144,7 @@ Multi-tenant from day one with:
 | Landing Page Generator | AI creates pages from descriptions |
 | Development Agents | Pre-built Claude Code agents |
 | Skill Modules | OTP, Teams, Security patterns |
+| Brand Color Generator | AI-powered palette generation with neuroscience |
 
 ### Legal & Compliance
 | Feature | Description |
@@ -244,6 +245,71 @@ The legal compliance agent provides guidance for:
 | Brand Colors | Primary & secondary colors |
 | Color Picker | Easy hex code selection |
 | Live Preview | See changes instantly |
+
+---
+
+## 🎨 Brand Color Palette Generator
+
+The `create-logo` command is an interactive brand color palette generator based on neuroscience, color theory, and WCAG 2.1 accessibility standards.
+
+### Features
+
+- **Interactive Interview**: Asks about brand name, industry, traits, and emotions
+- **Scientific Generation**: Colors based on psychology, neuroscience, and industry best practices
+- **Accessibility Testing**: WCAG 2.1 contrast ratio validation
+- **Multiple Formats**: Export to JSON, CSS, or Tailwind config
+- **Educational Content**: Learn about color psychology and neuroscience
+- **Tool Recommendations**: Links to professional design tools
+
+### Usage
+
+```bash
+# Interactive mode (recommended)
+php artisan create-logo
+
+# Quick test with defaults
+php artisan create-logo --skip-interview
+
+# Export to different formats
+php artisan create-logo --export=json
+php artisan create-logo --export=css
+php artisan create-logo --export=tailwind
+```
+
+### What You Get
+
+- **Primary Color**: Core brand identity based on emotion + industry
+- **Secondary Colors**: Harmonious support colors (analogous harmony)
+- **Accent Color**: Complementary color for CTAs and highlights
+- **Neutral Palette**: Professional grayscale for text and backgrounds
+- **Accessibility Report**: WCAG 2.1 contrast testing
+- **Usage Guidelines**: Best practices for applying your palette
+
+### Recommended Design Tools
+
+The command provides links to these professional tools:
+
+1. **Color Contrast Checker** (colourcontrast.cc) - WCAG testing
+2. **Khroma** (khroma.co) - AI-powered palette generator
+3. **Color Spectrum** (colorspectrum.design) - Harmony explorer
+4. **Pigment** (pigment.shapefactory.co) - Creative palettes
+5. **Realtime Colors** (realtimecolors.com) - Live preview tool
+
+### Example Output
+
+```
+PRIMARY COLOR
+The core of your brand identity
+┌────────────────────────────────────────┐
+│  HEX:  #3C8CDD                         │
+│  RGB:  rgb(60, 140, 221)               │
+│  HSL:  hsl(210°, 70%, 55%)             │
+└────────────────────────────────────────┘
+
+ACCESSIBILITY REPORT
+✓ PASS Primary color on black background
+    Contrast Ratio: 5.06:1  (Required: 4.5:1)
+```
 
 ---
 
